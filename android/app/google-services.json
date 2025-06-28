@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "872814823547",
+    "project_id": "dietbuddy-fa395",
+    "storage_bucket": "dietbuddy-fa395.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:872814823547:android:cbbb9bcbfab327d8b23ade",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBORfhsOPIfquEkfy30FzZLUzx-r_1l21k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
