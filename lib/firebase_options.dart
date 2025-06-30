@@ -85,5 +85,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'dietbuddy-fa395.firebasestorage.app',
     measurementId: 'G-PYYFWPLPD6',
   );
-
 }

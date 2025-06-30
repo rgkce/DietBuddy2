@@ -1,8 +1,7 @@
 import 'package:dietbuddy/constants/colors.dart';
 import 'package:dietbuddy/constants/styles.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 class ChatbotPage extends StatefulWidget {
   const ChatbotPage({super.key});
@@ -23,11 +22,12 @@ class _ChatbotPageState extends State<ChatbotPage>
   late Animation<double> _waveAnimation;
 
   bool _isTyping = false;
-  
-  // Ollama konfigürasyonu
-  static const String ollamaUrl = 'http://10.0.2.2:11434/api/generate'; // Android emulator için
-  // Fiziksel cihaz için bilgisayarınızın IP adresini kullanın: 'http://192.168.1.X:11434/api/generate'
-  static const String modelName = 'phi3:mini'; // Önce en küçük modeli deneyin
+
+  // Gemini API konfigürasyonu
+  static const String _apiKey =
+      'AIzaSyD1SBeCKhHvZ9K9KNzc9YwxtoAjgqkUbdc'; // API anahtarınızı buraya yazın
+  late GenerativeModel _model;
+  ChatSession? _chatSession;
 
   @override
   void initState() {
@@ -65,56 +65,45 @@ class _ChatbotPageState extends State<ChatbotPage>
 
     _messages.add({
       'role': 'bot',
-      'message': "Merhaba, ben Vita. Size nasıl yardımcı olabilirim?",
+      'message': "Hi, I'm Vita. How can I help you with nutrition?",
     });
-    
-    // Modeli ön yükle
-    _preloadModel();
+
+    // Gemini modelini başlat
+    _initializeGemini();
   }
-  
-  // Model ön yükleme fonksiyonu
-  Future<void> _preloadModel() async {
+
+  // Gemini modelini başlatma fonksiyonu
+  void _initializeGemini() {
     try {
-      print('Model kontrol ediliyor...');
-      
-      // Önce mevcut modelleri kontrol et
-      final availableModels = await _getAvailableModels();
-      print('Mevcut modeller: $availableModels');
-      
-      if (availableModels.isNotEmpty) {
-        print('Model hazır!');
-      } else {
-        print('Hiç model bulunamadı!');
-        setState(() {
-          _messages.add({
-            'role': 'bot',
-            'message': "Üzgünüm, hiç AI modeli yüklü değil. Lütfen 'ollama pull tinyllama' komutunu çalıştırın.",
-          });
+      _model = GenerativeModel(
+        model: 'gemini-1.5-flash',
+        apiKey: _apiKey,
+        generationConfig: GenerationConfig(
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        ),
+        systemInstruction: Content.system(
+          'Sen Vita, bir beslenme uzmanı asistanısın. Kullanıcılara sağlıklı beslenme, '
+          'diyet önerileri, kalori hesaplama ve genel sağlık konularında yardımcı oluyorsun. '
+          'Samimi, profesyonel ve yardımsever bir tonda konuş. Türkçe yanıt ver.'
+          'Cevapların kısa özetler halinde olsun',
+        ),
+      );
+
+      _chatSession = _model.startChat();
+      print('Gemini model başarıyla başlatıldı');
+    } catch (e) {
+      print('Gemini başlatma hatası: $e');
+      setState(() {
+        _messages.add({
+          'role': 'bot',
+          'message':
+              "Üzgünüm, şu anda AI servisimde bir sorun var. Lütfen daha sonra tekrar deneyin.",
         });
-      }
-    } catch (e) {
-      print('Model kontrol hatası: $e');
+      });
     }
-  }
-
-  // Mevcut modelleri getir
-  Future<List<String>> _getAvailableModels() async {
-    try {
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:11434/api/tags'),
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final models = (data['models'] as List?)
-            ?.map((model) => model['name'].toString())
-            .toList() ?? [];
-        return models;
-      }
-    } catch (e) {
-      print('Model listesi alma hatası: $e');
-    }
-    return [];
   }
 
   @override
@@ -125,56 +114,42 @@ class _ChatbotPageState extends State<ChatbotPage>
     super.dispose();
   }
 
-  // Ollama API'sine istek gönderen fonksiyon
-  Future<String> _sendToOllama(String message) async {
+  // Gemini API'sine istek gönderen fonksiyon
+  Future<String> _sendToGemini(String message) async {
     try {
-      print('Ollama\'ya istek gönderiliyor: $ollamaUrl');
-      print('Model: $modelName');
-      print('Mesaj: $message');
-      
-      final response = await http.post(
-        Uri.parse(ollamaUrl),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': modelName,
-          'prompt': message,
-          'stream': false,
-          'options': {
-            'num_predict': 128,  // Maksimum token sayısını sınırla
-            'temperature': 0.7,  // Yaratıcılık seviyesi
-            'top_p': 0.9,       // Nucleus sampling
-            'top_k': 40,        // Top-k sampling
-          }
-        }),
-      ).timeout(const Duration(seconds: 180)); // Timeout'u 3 dakikaya çıkardık
+      if (_chatSession == null) {
+        throw Exception('Chat session başlatılamadı');
+      }
 
-      print('Response status: ${response.statusCode}');
+      print('Gemini\'ye mesaj gönderiliyor: $message');
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['response'] ?? 'Üzgünüm, yanıt alamadım.';
-      } else if (response.statusCode == 404) {
-        return 'Model "$modelName" bulunamadı. Lütfen şu komutları çalıştırın:\n\nollama pull $modelName\n\nVeya mevcut modelleri kontrol edin:\nollama list';
+      final response = await _chatSession!.sendMessage(Content.text(message));
+
+      if (response.text != null && response.text!.isNotEmpty) {
+        return response.text!;
       } else {
-        print('Ollama API Hatası: ${response.statusCode}');
-        return 'API Hatası (${response.statusCode}): ${response.body}';
+        return 'Üzgünüm, şu anda size yardımcı olamıyorum. Lütfen sorunuzu farklı şekilde sormayı deneyin.';
       }
     } catch (e) {
-      print('Detaylı Hata: $e');
-      if (e.toString().contains('Connection refused')) {
-        return 'Ollama sunucusu çalışmıyor. Lütfen "ollama serve" komutunu çalıştırın.';
-      } else if (e.toString().contains('TimeoutException')) {
-        return 'Model yükleniyor veya çok yavaş yanıt veriyor. Lütfen bekleyin veya daha küçük bir model deneyin.';
+      print('Gemini API Hatası: $e');
+
+      if (e.toString().contains('API_KEY')) {
+        return 'API anahtarı hatası. Lütfen geliştirici ile iletişime geçin.';
+      } else if (e.toString().contains('SAFETY')) {
+        return 'Güvenlik nedeniyle bu soruya yanıt veremiyorum. Lütfen farklı bir soru sorun.';
+      } else if (e.toString().contains('QUOTA_EXCEEDED')) {
+        return 'Günlük kullanım limitine ulaşıldı. Lütfen yarın tekrar deneyin.';
+      } else if (e.toString().contains('network')) {
+        return 'İnternet bağlantınızı kontrol edin ve tekrar deneyin.';
+      } else {
+        return 'Bir hata oluştu. Lütfen tekrar deneyin.';
       }
-      return 'Bağlantı hatası: ${e.toString()}';
     }
   }
 
   void _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isTyping) return;
 
     setState(() {
       _messages.add({'role': 'user', 'message': text});
@@ -185,26 +160,78 @@ class _ChatbotPageState extends State<ChatbotPage>
     _scrollToBottom();
 
     try {
-      // Ollama'dan yanıt al
-      final response = await _sendToOllama(text);
-      
+      // Gemini'den yanıt al
+      final response = await _sendToGemini(text);
+
       setState(() {
         _isTyping = false;
         _messages.add({'role': 'bot', 'message': response});
       });
-      
+
       _scrollToBottom();
     } catch (e) {
       setState(() {
         _isTyping = false;
         _messages.add({
-          'role': 'bot', 
-          'message': 'Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.'
+          'role': 'bot',
+          'message': 'Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.',
         });
       });
-      
+
       _scrollToBottom();
     }
+  }
+
+  // Streaming response için alternatif fonksiyon
+  void _sendMessageWithStream() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty || _isTyping) return;
+
+    setState(() {
+      _messages.add({'role': 'user', 'message': text});
+      _controller.clear();
+      _isTyping = true;
+      // Streaming mesajı için placeholder ekle
+      _messages.add({'role': 'bot', 'message': '', 'isStreaming': 'true'});
+    });
+
+    _scrollToBottom();
+
+    try {
+      final response = _model.generateContentStream([Content.text(text)]);
+      String fullResponse = '';
+
+      await for (final chunk in response) {
+        if (chunk.text != null) {
+          fullResponse += chunk.text!;
+          setState(() {
+            // Son mesajı güncelle (streaming mesajı)
+            _messages.last = {
+              'role': 'bot',
+              'message': fullResponse,
+              'isStreaming': 'true',
+            };
+          });
+          _scrollToBottom();
+        }
+      }
+
+      setState(() {
+        _isTyping = false;
+        // Streaming tamamlandı
+        _messages.last = {'role': 'bot', 'message': fullResponse};
+      });
+    } catch (e) {
+      setState(() {
+        _isTyping = false;
+        _messages.last = {
+          'role': 'bot',
+          'message': 'Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.',
+        };
+      });
+    }
+
+    _scrollToBottom();
   }
 
   void _scrollToBottom() {
@@ -219,12 +246,26 @@ class _ChatbotPageState extends State<ChatbotPage>
     });
   }
 
+  void _clearChat() {
+    setState(() {
+      _messages.clear();
+      _messages.add({
+        'role': 'bot',
+        'message': "Hi, I'm Vita. How can I help you with nutrition?",
+      });
+    });
+
+    // Yeni chat session başlat
+    _chatSession = _model.startChat();
+  }
+
   Widget _buildMessage(
     Map<String, String> msg,
     double fontSize,
     double avatarRadius,
   ) {
     final isUser = msg['role'] == 'user';
+    final isStreaming = msg['isStreaming'] == 'true';
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
@@ -256,9 +297,41 @@ class _ChatbotPageState extends State<ChatbotPage>
                   ),
                 ],
               ),
-              child: Text(
-                msg['message'] ?? '',
-                style: TextStyle(fontSize: fontSize),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    msg['message'] ?? '',
+                    style: TextStyle(fontSize: fontSize),
+                  ),
+                  if (isStreaming && !isUser)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.vibrantPurple,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Vita is typing...',
+                            style: TextStyle(
+                              fontSize: fontSize * 0.8,
+                              fontStyle: FontStyle.italic,
+                              color: AppColors.textColor.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -278,24 +351,36 @@ class _ChatbotPageState extends State<ChatbotPage>
             radius: avatarRadius,
           ),
           const SizedBox(width: 20),
-          AnimatedBuilder(
-            animation: _controllerAnim,
-            builder: (context, child) {
-              return Opacity(
-                opacity: _fadeAnimation.value,
-                child: Transform.translate(
-                  offset: Offset(0, _waveAnimation.value),
-                  child: Text(
-                    "Vita",
-                    style: AppStyles.pageTitle.copyWith(
-                      fontSize: titleFontSize,
-                      fontWeight: FontWeight.bold,
-                      color: _colorAnimation.value,
+          Expanded(
+            child: AnimatedBuilder(
+              animation: _controllerAnim,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _fadeAnimation.value,
+                  child: Transform.translate(
+                    offset: Offset(0, _waveAnimation.value),
+                    child: Text(
+                      "Vita",
+                      style: AppStyles.pageTitle.copyWith(
+                        fontSize: titleFontSize,
+                        fontWeight: FontWeight.bold,
+                        color: _colorAnimation.value,
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
+          ),
+          // Temizle butonu
+          IconButton(
+            onPressed: _clearChat,
+            icon: Icon(
+              Icons.refresh,
+              color: AppColors.vibrantPurple,
+              size: titleFontSize,
+            ),
+            tooltip: 'Clear Chat',
           ),
         ],
       ),
@@ -309,7 +394,7 @@ class _ChatbotPageState extends State<ChatbotPage>
     final screenHeight = media.size.height;
 
     final avatarRadius = screenWidth * 0.06;
-    final titleFontSize = screenWidth * 0.07;
+    final titleFontSize = screenWidth * 0.06; // Başlık boyutunu küçülttüm
     final messageFontSize = screenWidth * 0.04;
     final paddingHorizontal = screenWidth * 0.04;
     final inputFontSize = screenWidth * 0.045;
@@ -340,7 +425,7 @@ class _ChatbotPageState extends State<ChatbotPage>
                       _messages.isEmpty
                           ? Center(
                             child: Text(
-                              "Henüz mesaj yok.",
+                              "No message yet.",
                               style: TextStyle(fontSize: messageFontSize),
                             ),
                           )
@@ -372,7 +457,7 @@ class _ChatbotPageState extends State<ChatbotPage>
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          "Vita yazıyor",
+                          "Vita is typing",
                           style: TextStyle(
                             fontStyle: FontStyle.italic,
                             color: AppColors.textColor,
@@ -413,21 +498,54 @@ class _ChatbotPageState extends State<ChatbotPage>
                                 horizontal: 20,
                                 vertical: 15,
                               ),
-                              hintText: "Mesajınızı yazın...",
+                              hintText: "Ask about nutrition...",
                               hintStyle: TextStyle(color: AppColors.textColor),
                               border: InputBorder.none,
                             ),
                             onSubmitted: (_) => _sendMessage(),
+                            enabled: !_isTyping,
+                            maxLines: null,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 15),
+                      const SizedBox(width: 10),
+                      // Streaming mesaj butonu
                       GestureDetector(
-                        onTap: _sendMessage,
+                        onTap: _isTyping ? null : _sendMessageWithStream,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color:
+                                _isTyping
+                                    ? AppColors.greyColor
+                                    : AppColors.button,
+                            borderRadius: BorderRadius.circular(50),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.shadowColor.withOpacity(0.3),
+                                blurRadius: 6,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.auto_awesome,
+                            color: AppColors.primaryColor,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      // Normal mesaj butonu
+                      GestureDetector(
+                        onTap: _isTyping ? null : _sendMessage,
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.vibrantPurple,
+                            color:
+                                _isTyping
+                                    ? AppColors.greyColor
+                                    : AppColors.vibrantPurple,
                             borderRadius: BorderRadius.circular(50),
                             boxShadow: [
                               BoxShadow(

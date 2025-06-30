@@ -3,7 +3,7 @@ import 'package:dietbuddy/constants/styles.dart';
 import 'package:dietbuddy/helperScreens/forgot_password.dart';
 import 'package:dietbuddy/helperScreens/signup_page.dart';
 import 'package:dietbuddy/mainPages/main_navigation_page.dart';
-import 'package:dietbuddy/services/firebase/auth_service.dart'; // Auth service import
+import 'package:dietbuddy/services/firebase/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
