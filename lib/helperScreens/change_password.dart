@@ -12,9 +12,11 @@ class ChangePassword extends StatefulWidget {
 }
 
 class _ChangePasswordState extends State<ChangePassword> {
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final FocusNode _confirmPasswordFocus = FocusNode();
 
   String? _passwordError;
@@ -207,7 +209,8 @@ class _ChangePasswordState extends State<ChangePassword> {
       controller: controller,
       focusNode: currentFocus,
       obscureText: obscureText,
-      textInputAction: isLastField ? TextInputAction.done : TextInputAction.next,
+      textInputAction:
+          isLastField ? TextInputAction.done : TextInputAction.next,
       onSubmitted: (_) {
         if (!isLastField && nextFocus != null) {
           FocusScope.of(context).requestFocus(nextFocus);
@@ -290,19 +293,16 @@ class _ChangePasswordState extends State<ChangePassword> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text(
-          'Şifreniz başarıyla güncellendi!',
+          'Your password has been successfully updated!',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
-
 
   void _updatePassword() async {
     setState(() {
@@ -315,9 +315,11 @@ class _ChangePasswordState extends State<ChangePassword> {
       String newPassword = _newPasswordController.text.trim();
       String confirmPassword = _confirmPasswordController.text.trim();
 
-      if (currentPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
+      if (currentPassword.isEmpty ||
+          newPassword.isEmpty ||
+          confirmPassword.isEmpty) {
         setState(() {
-          _passwordError = "Lütfen tüm alanları doldurun!";
+          _passwordError = "Please fill in all fields!";
           _isLoading = false;
         });
         return;
@@ -325,7 +327,7 @@ class _ChangePasswordState extends State<ChangePassword> {
 
       if (newPassword != confirmPassword) {
         setState(() {
-          _passwordError = "Yeni şifreler eşleşmiyor!";
+          _passwordError = "The new passwords don't match!";
           _isLoading = false;
         });
         return;
@@ -333,7 +335,8 @@ class _ChangePasswordState extends State<ChangePassword> {
 
       if (!_isPasswordValid(newPassword)) {
         setState(() {
-          _passwordError = "Şifre en az 6 karakter olmalı ve büyük harf, küçük harf ve rakam içermelidir!";
+          _passwordError =
+              "The password must be at least 6 characters and contain uppercase letters, lowercase letters and numbers!";
           _isLoading = false;
         });
         return;
@@ -341,16 +344,19 @@ class _ChangePasswordState extends State<ChangePassword> {
 
       if (currentPassword == newPassword) {
         setState(() {
-          _passwordError = "Yeni şifre mevcut şifreden farklı olmalıdır!";
+          _passwordError =
+              "The new password must be different from the existing password!";
           _isLoading = false;
         });
         return;
       }
 
-      bool isCurrentPasswordValid = await _verifyCurrentPassword(currentPassword);
+      bool isCurrentPasswordValid = await _verifyCurrentPassword(
+        currentPassword,
+      );
       if (!isCurrentPasswordValid) {
         setState(() {
-          _passwordError = "Mevcut şifre yanlış!";
+          _passwordError = "The current password is incorrect!";
           _isLoading = false;
         });
         return;
@@ -359,7 +365,8 @@ class _ChangePasswordState extends State<ChangePassword> {
       bool isPasswordChanged = await _changePasswordInFirebase(newPassword);
       if (!isPasswordChanged) {
         setState(() {
-          _passwordError = "Şifre güncellenirken bir hata oluştu. Lütfen tekrar deneyin.";
+          _passwordError =
+              "There was an error updating the password. Please try again.";
           _isLoading = false;
         });
         return;
@@ -380,7 +387,7 @@ class _ChangePasswordState extends State<ChangePassword> {
       }
     } catch (e) {
       setState(() {
-        _passwordError = "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.";
+        _passwordError = "An unexpected error occurred. Please try again.";
         _isLoading = false;
       });
       print('Hata: $e');

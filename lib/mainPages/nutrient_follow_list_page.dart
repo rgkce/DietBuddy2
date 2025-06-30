@@ -17,8 +17,6 @@ class _NutritionPageState extends State<NutritionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 254, 255),
-      
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -33,14 +31,15 @@ class _NutritionPageState extends State<NutritionPage> {
         ),
         child: Column(
           children: [
-            SizedBox(height: 20,),
+            SizedBox(height: 50),
             Text(
-          'Nutrient Tracking',
-          style: AppStyles.pageTitle.copyWith(
-            color: AppColors.vibrantPurple,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+              'Nutrient Tracking',
+              style: AppStyles.pageTitle.copyWith(
+                color: AppColors.vibrantPurple,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 30),
             // Add Nutrition Button
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -48,11 +47,11 @@ class _NutritionPageState extends State<NutritionPage> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () => _navigateToAddNutrition(),
-                  icon: Icon(Icons.add, color: Colors.white),
+                  icon: Icon(Icons.add, color: AppColors.primaryColor),
                   label: Text('Add Nutrition', style: AppStyles.primaryStyle),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.vibrantPurple.withOpacity(0.8),
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.primaryColor,
                     elevation: 4,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -62,10 +61,10 @@ class _NutritionPageState extends State<NutritionPage> {
                 ),
               ),
             ),
-
+            SizedBox(height: 30),
             // Daily Summary Card
             _buildDailySummaryCard(),
-
+            SizedBox(height: 30),
             // Nutrition List
             Expanded(
               child: StreamBuilder<List<NutritionEntry>>(
@@ -78,7 +77,6 @@ class _NutritionPageState extends State<NutritionPage> {
                       ),
                     );
                   }
-
                   if (snapshot.hasError) {
                     return Center(
                       child: Text(
@@ -145,74 +143,54 @@ class _NutritionPageState extends State<NutritionPage> {
         final nutritionList = snapshot.data ?? [];
         final totals = _nutritionService.calculateDailyTotals(nutritionList);
 
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.vibrantBlue.withOpacity(0.8),
-                AppColors.vibrantPurple.withOpacity(0.8),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadowColor.withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
+        final int currentCalories = totals['calories']?.toInt() ?? 0;
+        final int goalCalories = 2000; // İsteğe göre dinamik yapılabilir
+        double progress = currentCalories / goalCalories;
+        if (progress > 1.0) progress = 1.0;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                'Today\'s Summary',
-                style: AppStyles.textStyle.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+              // Başlık
+              Center(
+                child: Text(
+                  'Today\'s Summary',
+                  style: AppStyles.textStyle.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildSummaryItem('Calories', '${totals['calories']?.toInt() ?? 0}'),
-                  _buildSummaryItem('Protein', '${totals['protein']?.toStringAsFixed(1) ?? 0}g'),
-                  _buildSummaryItem('Carbs', '${totals['carbs']?.toStringAsFixed(1) ?? 0}g'),
-                  _buildSummaryItem('Fat', '${totals['fat']?.toStringAsFixed(1) ?? 0}g'),
-                ],
+              const SizedBox(height: 16),
+              // İlerleme Çubuğu
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 18,
+                  backgroundColor: AppColors.shadowColor.withOpacity(0.5),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    progress < 0.5
+                        ? AppColors.lineerEnd
+                        : (progress < 0.8
+                            ? AppColors.vibrantPink
+                            : AppColors.errorColor),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Kalori oranı metni
+              Text(
+                '$currentCalories / $goalCalories kcal',
+                style: AppStyles.textStyle.copyWith(fontSize: 18),
               ),
             ],
           ),
         );
       },
-    );
-  }
-
-  Widget _buildSummaryItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: AppStyles.textStyle.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 12,
-          ),
-        ),
-      ],
     );
   }
 
@@ -250,19 +228,13 @@ class _NutritionPageState extends State<NutritionPage> {
                 // Header Row
                 Row(
                   children: [
-                    Icon(
-                      nutrition.isFromApi ? Icons.search : Icons.edit,
-                      color: AppColors.vibrantPurple,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         nutrition.name,
                         style: AppStyles.textStyle.copyWith(
                           color: AppColors.lineerStart,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 25,
                         ),
                       ),
                     ),
@@ -270,7 +242,7 @@ class _NutritionPageState extends State<NutritionPage> {
                       onPressed: () => _showNutritionDetails(nutrition),
                       icon: Icon(
                         Icons.info_outline,
-                        color: AppColors.vibrantBlue,
+                        color: AppColors.lineerEnd,
                       ),
                       tooltip: 'Show Details',
                     ),
@@ -278,81 +250,51 @@ class _NutritionPageState extends State<NutritionPage> {
                       onPressed: () => _deleteNutrition(nutrition),
                       icon: Icon(
                         Icons.delete_outline,
-                        color: AppColors.vibrantPink,
+                        color: AppColors.errorColor,
                       ),
                       tooltip: 'Delete',
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 8),
-
-                // Amount
-                Text(
-                  '${nutrition.gram}g',
-                  style: AppStyles.textStyle.copyWith(
-                    color: AppColors.vibrantPurple,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                const SizedBox(height: 12),
+                // Gram ve Kalori Bilgisi
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${nutrition.gram}g',
+                      style: AppStyles.textStyle.copyWith(
+                        color: AppColors.vibrantPurple,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    SizedBox(width: 20),
+                    Text('-'),
+                    SizedBox(width: 20),
+                    if (nutrition.calories != null)
+                      Text(
+                        '${nutrition.calories!.toInt()} kcal',
+                        style: AppStyles.textStyle.copyWith(
+                          color: AppColors.vibrantPurple,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                  ],
                 ),
 
-                // Nutrition Info (if available)
-                if (nutrition.isFromApi && nutrition.calories != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildNutrientChip('Cal', '${nutrition.calories?.toInt() ?? 0}'),
-                      _buildNutrientChip('P', '${nutrition.protein?.toStringAsFixed(1) ?? 0}g'),
-                      _buildNutrientChip('C', '${nutrition.carbs?.toStringAsFixed(1) ?? 0}g'),
-                      _buildNutrientChip('F', '${nutrition.fat?.toStringAsFixed(1) ?? 0}g'),
-                    ],
-                  ),
-                ],
-
-                // Time
                 const SizedBox(height: 8),
+                // Zaman bilgisi
                 Text(
                   _formatTime(nutrition.dateAdded),
-                  style: TextStyle(
-                    color: AppColors.lineerEnd,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: AppColors.lineerEnd, fontSize: 12),
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildNutrientChip(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.vibrantPurple.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              color: AppColors.vibrantPurple,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: AppColors.lineerEnd,
-              fontSize: 10,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -375,9 +317,7 @@ class _NutritionPageState extends State<NutritionPage> {
   void _navigateToAddNutrition() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddNutritionPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const AddNutritionPage()),
     );
 
     if (result != null) {
@@ -402,7 +342,7 @@ class _NutritionPageState extends State<NutritionPage> {
       );
 
       await _nutritionService.addNutrition(entry);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -426,30 +366,41 @@ class _NutritionPageState extends State<NutritionPage> {
   void _deleteNutrition(NutritionEntry nutrition) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.primaryColor,
-        title: Text(
-          'Delete Nutrition',
-          style: AppStyles.textStyle.copyWith(
-            color: AppColors.vibrantPurple,
-            fontWeight: FontWeight.bold,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppColors.primaryColor,
+            title: Text(
+              'Delete Nutrition',
+              style: AppStyles.textStyle.copyWith(
+                color: AppColors.vibrantPurple,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+            content: Text(
+              'Are you sure you want to delete "${nutrition.name}"?',
+              style: AppStyles.textStyle.copyWith(
+                color: AppColors.lineerStart,
+                fontSize: 18,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppColors.lineerEnd, fontSize: 18),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(
+                  'Delete',
+                  style: TextStyle(color: AppColors.errorColor, fontSize: 18),
+                ),
+              ),
+            ],
           ),
-        ),
-        content: Text(
-          'Are you sure you want to delete "${nutrition.name}"?',
-          style: AppStyles.textStyle.copyWith(color: AppColors.lineerStart),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: TextStyle(color: AppColors.lineerEnd)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: AppColors.vibrantPink)),
-          ),
-        ],
-      ),
     );
 
     if (confirmed == true) {
@@ -478,151 +429,181 @@ class _NutritionPageState extends State<NutritionPage> {
 
   void _showEditGramDialog(NutritionEntry nutrition) {
     final controller = TextEditingController(text: nutrition.gram.toString());
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.primaryColor,
-        title: Text(
-          'Edit Amount',
-          style: AppStyles.textStyle.copyWith(
-            color: AppColors.vibrantPurple,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              nutrition.name,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppColors.primaryColor,
+            title: Text(
+              'Edit Amount',
               style: AppStyles.textStyle.copyWith(
-                color: AppColors.lineerStart,
+                color: AppColors.vibrantPurple,
                 fontWeight: FontWeight.bold,
+                fontSize: 25,
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              style: AppStyles.textStyle.copyWith(color: AppColors.lineerStart),
-              decoration: InputDecoration(
-                labelText: 'Amount (g)',
-                labelStyle: TextStyle(color: AppColors.lineerStart),
-                filled: true,
-                fillColor: AppColors.primaryColor.withOpacity(0.7),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.vibrantPurple),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  nutrition.name,
+                  style: AppStyles.textStyle.copyWith(
+                    color: AppColors.lineerStart,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.vibrantPurple, width: 1.5),
+                const SizedBox(height: 18),
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  style: AppStyles.textStyle.copyWith(
+                    color: AppColors.lineerStart,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Amount (g)',
+                    labelStyle: TextStyle(color: AppColors.lineerStart),
+                    filled: true,
+                    fillColor: AppColors.primaryColor.withOpacity(0.7),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.vibrantPurple),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.vibrantPurple,
+                        width: 1.5,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.lineerEnd,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.lineerEnd, width: 1.5),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppColors.lineerEnd, fontSize: 18),
                 ),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: AppColors.lineerEnd)),
-          ),
-          TextButton(
-            onPressed: () async {
-              final newGram = double.tryParse(controller.text);
-              if (newGram != null && newGram > 0) {
-                try {
-                  await _nutritionService.updateNutritionGram(nutrition.id, newGram);
-                  Navigator.pop(context);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Amount updated successfully!'),
-                        backgroundColor: AppColors.vibrantPurple,
-                      ),
-                    );
+              TextButton(
+                onPressed: () async {
+                  final newGram = double.tryParse(controller.text);
+                  if (newGram != null && newGram > 0) {
+                    try {
+                      await _nutritionService.updateNutritionGram(
+                        nutrition.id,
+                        newGram,
+                      );
+                      Navigator.pop(context);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Amount updated successfully!'),
+                            backgroundColor: AppColors.vibrantPurple,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to update amount: $e'),
+                            backgroundColor: AppColors.vibrantPink,
+                          ),
+                        );
+                      }
+                    }
                   }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to update amount: $e'),
-                        backgroundColor: AppColors.vibrantPink,
-                      ),
-                    );
-                  }
-                }
-              }
-            },
-            child: Text('Update', style: TextStyle(color: AppColors.vibrantPurple)),
+                },
+                child: Text(
+                  'Update',
+                  style: TextStyle(
+                    color: AppColors.vibrantPurple,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showNutritionDetails(NutritionEntry nutrition) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.primaryColor,
-        title: Text(
-          nutrition.name,
-          style: AppStyles.textStyle.copyWith(
-            color: AppColors.vibrantPurple,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow('Amount', '${nutrition.gram}g'),
-            if (nutrition.isFromApi) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Nutrition Information:',
-                style: AppStyles.textStyle.copyWith(
-                  color: AppColors.lineerStart,
-                  fontWeight: FontWeight.bold,
-                ),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppColors.primaryColor.withOpacity(0.85),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              nutrition.name,
+              style: AppStyles.textStyle.copyWith(
+                color: AppColors.vibrantPurple,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
               ),
-              const SizedBox(height: 8),
-              if (nutrition.calories != null)
-                _buildDetailRow('Calories', '${nutrition.calories!.toInt()}'),
-              if (nutrition.protein != null)
-                _buildDetailRow('Protein', '${nutrition.protein!.toStringAsFixed(1)}g'),
-              if (nutrition.carbs != null)
-                _buildDetailRow('Carbohydrates', '${nutrition.carbs!.toStringAsFixed(1)}g'),
-              if (nutrition.fat != null)
-                _buildDetailRow('Fat', '${nutrition.fat!.toStringAsFixed(1)}g'),
-              if (nutrition.fiber != null)
-                _buildDetailRow('Fiber', '${nutrition.fiber!.toStringAsFixed(1)}g'),
-            ] else ...[
-              const SizedBox(height: 8),
-              Text(
-                'Manual entry - no nutrition data',
-                style: TextStyle(
-                  color: AppColors.lineerEnd,
-                  fontStyle: FontStyle.italic,
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildDetailRow('Amount', '${nutrition.gram}g'),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Nutrition Information:',
+                    style: AppStyles.textStyle.copyWith(
+                      color: AppColors.lineerStart,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildDetailRow(
+                    'Calories',
+                    '${nutrition.calories?.toInt() ?? '-'}',
+                  ),
+                  _buildDetailRow(
+                    'Protein',
+                    '${nutrition.protein?.toStringAsFixed(1) ?? '-'}g',
+                  ),
+                  _buildDetailRow(
+                    'Carbs',
+                    '${nutrition.carbs?.toStringAsFixed(1) ?? '-'}g',
+                  ),
+                  _buildDetailRow(
+                    'Fat',
+                    '${nutrition.fat?.toStringAsFixed(1) ?? '-'}g',
+                  ),
+                  _buildDetailRow(
+                    'Fiber',
+                    '${nutrition.fiber?.toStringAsFixed(1) ?? '-'}g',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDetailRow('Added', _formatTime(nutrition.dateAdded)),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Close',
+                  style: TextStyle(color: AppColors.vibrantPurple),
                 ),
               ),
             ],
-            const SizedBox(height: 12),
-            _buildDetailRow('Added', _formatTime(nutrition.dateAdded)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close', style: TextStyle(color: AppColors.vibrantPurple)),
           ),
-        ],
-      ),
     );
   }
 
@@ -634,7 +615,10 @@ class _NutritionPageState extends State<NutritionPage> {
         children: [
           Text(
             label,
-            style: AppStyles.textStyle.copyWith(color: AppColors.lineerStart),
+            style: AppStyles.textStyle.copyWith(
+              color: AppColors.lineerStart,
+              fontSize: 18,
+            ),
           ),
           Text(
             value,

@@ -86,7 +86,7 @@ class _SignupPageState extends State<SignupPage> {
 
   Future<void> _createAccount() async {
     if (!_isFormValid) {
-      _showSnackBar("Lütfen tüm alanları doğru şekilde doldurun.");
+      _showSnackBar("Please fill in all fields correctly.");
       return;
     }
 
@@ -106,7 +106,7 @@ class _SignupPageState extends State<SignupPage> {
         if (mounted) {
           _showSnackBar(
             result.message ??
-                "Hesap başarıyla oluşturuldu. Doğrulama e-postasını kontrol edin.",
+                "Account created successfully. Check the verification email.",
             isSuccess: true,
           );
 
@@ -117,12 +117,12 @@ class _SignupPageState extends State<SignupPage> {
         }
       } else {
         if (mounted) {
-          _showSnackBar(result.message ?? "Hesap oluşturulamadı");
+          _showSnackBar(result.message ?? "Failed to create account.");
         }
       }
     } catch (e) {
       if (mounted) {
-        _showSnackBar("Beklenmeyen bir hata oluştu: ${e.toString()}");
+        _showSnackBar("An unexpected error occurred: ${e.toString()}");
       }
     } finally {
       if (mounted) {

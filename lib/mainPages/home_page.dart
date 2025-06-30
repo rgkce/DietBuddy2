@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:dietbuddy/constants/colors.dart';
 import 'package:dietbuddy/constants/styles.dart';
-import 'package:dietbuddy/services/firebase/firebase_weight_service.dart'; // Service'i import edin
+import 'package:dietbuddy/services/firebase/firebase_weight_service.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -41,7 +41,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     final weightData = await FirebaseWeightService.loadWeightData();
-    
+
     if (weightData != null) {
       setState(() {
         startWeight = weightData.startWeight;
@@ -58,7 +58,7 @@ class _HomePageState extends State<HomePage> {
       // Hata durumunda kullanıcıya bilgi verilebilir
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Veriler yüklenirken bir hata oluştu'),
+          content: Text('An error occurred while loading data.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -72,20 +72,20 @@ class _HomePageState extends State<HomePage> {
     });
 
     final success = await FirebaseWeightService.updateCurrentWeight(newWeight);
-    
+
     if (!success) {
       // Eğer güncelleme başarısız olursa, eski değeri geri yükle
       await _loadWeightData();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Kilo güncellenirken bir hata oluştu'),
+          content: Text('An error occurred while updating Weight.'),
           backgroundColor: Colors.red,
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Kilo başarıyla güncellendi'),
+          content: Text('Weight successfully updated.'),
           backgroundColor: Colors.green,
         ),
       );
@@ -119,28 +119,27 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           child: SafeArea(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
-                : SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: horizontalPadding,
-                      vertical: 24,
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: horizontalPadding,
+                        vertical: 24,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 20),
+                          _buildWeightInfo(),
+                          const SizedBox(height: 20),
+                          _buildChart(context),
+                          const SizedBox(height: 30),
+                          _buildUpdateBMIButton(context),
+                          const SizedBox(height: 70),
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 20),
-                        _buildWeightInfo(),
-                        const SizedBox(height: 20),
-                        _buildChart(context),
-                        const SizedBox(height: 30),
-                        _buildUpdateBMIButton(context),
-                        const SizedBox(height: 70),
-                      ],
-                    ),
-                  ),
           ),
         ),
       ),
@@ -151,8 +150,14 @@ class _HomePageState extends State<HomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text("Start Weight: $startWeight kg", style: AppStyles.text.copyWith(fontSize: 20)),
-        Text("Goal Weight: $goalWeight kg", style: AppStyles.text.copyWith(fontSize: 20)),
+        Text(
+          "Start Weight: $startWeight kg",
+          style: AppStyles.text.copyWith(fontSize: 20),
+        ),
+        Text(
+          "Goal Weight: $goalWeight kg",
+          style: AppStyles.text.copyWith(fontSize: 20),
+        ),
       ],
     );
   }
@@ -193,7 +198,10 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(width: 8),
               Text(
                 "Weight Chart",
-                style: AppStyles.titleStyle.copyWith(fontSize: 25, color: AppColors.lineerStart),
+                style: AppStyles.titleStyle.copyWith(
+                  fontSize: 25,
+                  color: AppColors.lineerStart,
+                ),
               ),
             ],
           ),
@@ -221,20 +229,41 @@ class _HomePageState extends State<HomePage> {
                           getTitlesWidget: (value, _) {
                             switch (value.toInt()) {
                               case 0:
-                                return Text("Start", style: AppStyles.titleStyle.copyWith(color: AppColors.lineerEnd));
+                                return Text(
+                                  "Start",
+                                  style: AppStyles.titleStyle.copyWith(
+                                    color: AppColors.lineerEnd,
+                                  ),
+                                );
                               case 1:
-                                return Text("Current", style: AppStyles.titleStyle.copyWith(color: AppColors.lineerEnd));
+                                return Text(
+                                  "Current",
+                                  style: AppStyles.titleStyle.copyWith(
+                                    color: AppColors.lineerEnd,
+                                  ),
+                                );
                               case 2:
-                                return Text("Goal", style: AppStyles.titleStyle.copyWith(color: AppColors.lineerEnd));
+                                return Text(
+                                  "Goal",
+                                  style: AppStyles.titleStyle.copyWith(
+                                    color: AppColors.lineerEnd,
+                                  ),
+                                );
                               default:
                                 return const SizedBox.shrink();
                             }
                           },
                         ),
                       ),
-                      leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
                     lineBarsData: [
                       LineChartBarData(
@@ -268,7 +297,10 @@ class _HomePageState extends State<HomePage> {
                           return touchedSpots.map((spot) {
                             return LineTooltipItem(
                               '${spot.y.toStringAsFixed(1)} kg',
-                              const TextStyle(color: Colors.white, fontSize: 14),
+                              const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
                             );
                           }).toList();
                         },
@@ -316,10 +348,22 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Age: $age", style: AppStyles.subtitleButtonStyle.copyWith(fontSize: 20)),
-                Text("Height: $height cm", style: AppStyles.subtitleButtonStyle.copyWith(fontSize: 20)),
-                Text("Weight: $currentWeight kg", style: AppStyles.subtitleButtonStyle.copyWith(fontSize: 20)),
-                Text("BMI: ${bmi.toStringAsFixed(1)}", style: AppStyles.subtitleButtonStyle.copyWith(fontSize: 20)),
+                Text(
+                  "Age: $age",
+                  style: AppStyles.subtitleButtonStyle.copyWith(fontSize: 20),
+                ),
+                Text(
+                  "Height: $height cm",
+                  style: AppStyles.subtitleButtonStyle.copyWith(fontSize: 20),
+                ),
+                Text(
+                  "Weight: $currentWeight kg",
+                  style: AppStyles.subtitleButtonStyle.copyWith(fontSize: 20),
+                ),
+                Text(
+                  "BMI: ${bmi.toStringAsFixed(1)}",
+                  style: AppStyles.subtitleButtonStyle.copyWith(fontSize: 20),
+                ),
               ],
             ),
           ),
@@ -333,7 +377,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showUpdateDialog(BuildContext context) {
-    final weightController = TextEditingController(text: currentWeight.toString());
+    final weightController = TextEditingController(
+      text: currentWeight.toString(),
+    );
 
     showDialog(
       context: context,
@@ -347,7 +393,13 @@ class _HomePageState extends State<HomePage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              title: Text("Update Weight", style: AppStyles.titleStyle.copyWith(color: AppColors.lineerStart, fontSize: 25)),
+              title: Text(
+                "Update Weight",
+                style: AppStyles.titleStyle.copyWith(
+                  color: AppColors.lineerStart,
+                  fontSize: 25,
+                ),
+              ),
               content: TextField(
                 controller: weightController,
                 keyboardType: TextInputType.number,
@@ -356,7 +408,12 @@ class _HomePageState extends State<HomePage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text("Cancel", style: AppStyles.text.copyWith(color: AppColors.lineerStart)),
+                  child: Text(
+                    "Cancel",
+                    style: AppStyles.text.copyWith(
+                      color: AppColors.lineerStart,
+                    ),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -367,14 +424,21 @@ class _HomePageState extends State<HomePage> {
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Lütfen geçerli bir kilo değeri girin'),
+                          content: Text('Please enter a valid weight value.'),
                           backgroundColor: Colors.red,
                         ),
                       );
                     }
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.button),
-                  child: Text("Update", style: AppStyles.text.copyWith(color: AppColors.lineerStart)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.button,
+                  ),
+                  child: Text(
+                    "Update",
+                    style: AppStyles.text.copyWith(
+                      color: AppColors.lineerStart,
+                    ),
+                  ),
                 ),
               ],
             ),
