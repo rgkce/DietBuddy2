@@ -45,11 +45,21 @@ class _HomePageState extends State<HomePage> {
         _isLoading = false;
       });
 
-      /// 🔑 Scroll animasyonu, veriler yüklendikten SONRA ve widget bağlandıktan sonra çalışacak.
+      /// 🔑 Scroll animasyonu, currentWeight noktasını ortalayacak şekilde!
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
+          double chartWidth = 700;
+          double pointCount = 3; // start, current, goal
+          double pointWidth = chartWidth / pointCount;
+
+          // X = 1 => currentWeight spotu
+          double targetScroll =
+              pointWidth * 1 -
+              MediaQuery.of(context).size.width / 2 +
+              pointWidth / 2;
+
           _scrollController.animateTo(
-            700 / 3,
+            targetScroll,
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeInOut,
           );
