@@ -291,7 +291,6 @@ class NamePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Gradient button instead of ElevatedButton
           _buildGradientButton(
             label: 'Next',
             onPressed: () {
@@ -339,7 +338,7 @@ class HeightWeightPage extends StatelessWidget {
           Image.asset('assets/images/db_logo.png', height: 160),
           const SizedBox(height: 40),
           Text(
-            "Enter your height and weight",
+            "",
             style: AppStyles.titleStyle.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -351,19 +350,25 @@ class HeightWeightPage extends StatelessWidget {
           TextField(
             controller: heightController,
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.next, // Enter → next
+            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             decoration: _inputDecoration("Height (cm)"),
           ),
           const SizedBox(height: 20),
           TextField(
             controller: weightController,
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             decoration: _inputDecoration("Weight (kg)"),
           ),
           const SizedBox(height: 20),
           TextField(
             controller: targetWeightController,
             keyboardType: TextInputType.number,
-            decoration: _inputDecoration("Target Weight (kg)"),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
+            decoration: _inputDecoration("Goal Weight (kg)"),
           ),
           const Spacer(),
           Row(
@@ -460,13 +465,13 @@ class AgeGenderPage extends StatelessWidget {
 
   const AgeGenderPage({
     super.key,
-    required this.ageController,
-    required this.birthDate,
-    required this.onBirthDateChanged,
     required this.selectedGender,
     required this.onGenderChanged,
     required this.onNext,
     required this.onBack,
+    this.birthDate,
+    required this.onBirthDateChanged,
+    required this.ageController,
   });
 
   @override
@@ -480,79 +485,68 @@ class AgeGenderPage extends StatelessWidget {
           Image.asset('assets/images/db_logo.png', height: 160),
           const SizedBox(height: 40),
           Text(
-            "Select your birth date and gender",
+            "",
             style: AppStyles.titleStyle.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: AppColors.vibrantPurple,
+              letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 40),
           GestureDetector(
             onTap: () async {
+              final now = DateTime.now();
               final selectedDate = await showDatePicker(
                 context: context,
-                initialDate: DateTime(2000),
+                initialDate: now.subtract(const Duration(days: 365 * 20)),
                 firstDate: DateTime(1900),
-                lastDate: DateTime.now(),
+                lastDate: now,
               );
+
               if (selectedDate != null) {
+                final age =
+                    now.year -
+                    selectedDate.year -
+                    ((now.month < selectedDate.month ||
+                            (now.month == selectedDate.month &&
+                                now.day < selectedDate.day))
+                        ? 1
+                        : 0);
+
+                ageController.text = age.toString();
                 onBirthDateChanged(selectedDate);
               }
             },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-              decoration: BoxDecoration(
-                color: AppColors.textfield,
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    birthDate == null
-                        ? "Select birth date"
-                        : "${birthDate!.day}/${birthDate!.month}/${birthDate!.year}",
-                    style: AppStyles.text,
+            child: AbsorbPointer(
+              child: TextField(
+                controller: ageController,
+                decoration: InputDecoration(
+                  labelText: "Birth date",
+                  hintText: "Tap to select birth date",
+                  filled: true,
+                  fillColor: AppColors.textfield,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                  const Icon(Icons.calendar_today, size: 20),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          TextField(
-            controller: ageController,
-            readOnly: true,
-            decoration: InputDecoration(
-              hintText: "Calculated age",
-              filled: true,
-              fillColor: AppColors.textfield,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide.none,
+                ),
+                style: AppStyles.titleStyle.copyWith(fontSize: 18),
               ),
             ),
           ),
           const SizedBox(height: 20),
           DropdownButtonFormField<String>(
             value: selectedGender,
-            decoration: InputDecoration(
-              hintText: "Select Gender",
-              filled: true,
-              fillColor: AppColors.textfield,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide.none,
-              ),
-            ),
+            decoration: _inputDecoration("Select Gender"),
             items: const [
               DropdownMenuItem(value: "Male", child: Text("Male")),
               DropdownMenuItem(value: "Female", child: Text("Female")),
               DropdownMenuItem(value: "Other", child: Text("Other")),
             ],
             onChanged: (value) {
-              if (value != null) onGenderChanged(value);
+              if (value != null) {
+                onGenderChanged(value);
+              }
             },
           ),
           const Spacer(),
@@ -583,12 +577,32 @@ class AgeGenderPage extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildGradientButton(label: 'Next', onPressed: onNext),
+                child: _buildGradientButton(
+                  label: 'Next',
+                  onPressed: () {
+                    if (ageController.text.isNotEmpty &&
+                        selectedGender != null) {
+                      onNext();
+                    }
+                  },
+                ),
               ),
             ],
           ),
           const SizedBox(height: 30),
         ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      filled: true,
+      fillColor: AppColors.textfield,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide.none,
       ),
     );
   }
@@ -628,7 +642,7 @@ class ResultPage extends StatelessWidget {
           Image.asset('assets/images/db_logo.png', height: 160),
           const SizedBox(height: 30),
           Text(
-            "Your Result",
+            "Your Diet Plan",
             style: AppStyles.pageTitle.copyWith(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -656,7 +670,7 @@ class ResultPage extends StatelessWidget {
                   style: AppStyles.titleStyle.copyWith(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.vibrantPink,
+                    color: AppColors.vibrantPurple,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -664,7 +678,7 @@ class ResultPage extends StatelessWidget {
                   "Category: $bmiCategory",
                   style: AppStyles.subtitleStyle.copyWith(
                     fontSize: 20,
-                    color: AppColors.vibrantPink.withOpacity(0.7),
+                    color: AppColors.vibrantPurple.withOpacity(0.7),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -672,7 +686,7 @@ class ResultPage extends StatelessWidget {
                   "Recommended Plan:",
                   style: AppStyles.titleStyle.copyWith(
                     fontSize: 22,
-                    color: AppColors.vibrantPink,
+                    color: AppColors.vibrantPurple,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -681,7 +695,7 @@ class ResultPage extends StatelessWidget {
                   style: AppStyles.text.copyWith(
                     fontSize: 16,
                     fontStyle: FontStyle.italic,
-                    color: AppColors.vibrantPink.withOpacity(0.7),
+                    color: AppColors.vibrantPurple.withOpacity(0.7),
                   ),
                 ),
               ],
