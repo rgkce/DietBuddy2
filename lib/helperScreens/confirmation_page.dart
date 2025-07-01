@@ -23,18 +23,18 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
   void initState() {
     super.initState();
     _user = _auth.currentUser;
-    
+
     // Eğer kullanıcı zaten doğrulanmışsa direkt yönlendir
     if (_user?.emailVerified == true) {
       _navigateToNextPage();
       return;
     }
-    
+
     // Periyodik olarak e-posta doğrulamasını kontrol et
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
       _checkEmailVerified();
     });
-    
+
     // İlk kontrolü hemen yap
     _checkEmailVerified();
   }
@@ -44,13 +44,13 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
       // Kullanıcı bilgilerini yenile
       await _user?.reload();
       _user = _auth.currentUser;
-      
+
       if (_user?.emailVerified == true) {
         setState(() {
           _isVerified = true;
           _isLoading = false;
         });
-        
+
         // Başarı mesajını gösterdikten sonra yönlendir
         await Future.delayed(const Duration(seconds: 2));
         _navigateToNextPage();
@@ -93,7 +93,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error sending email: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.errorColor,
           ),
         );
       }
@@ -145,13 +145,13 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                   child: IconButton(
                     onPressed: _goBack,
                     icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
+                      Icons.arrow_back_ios,
+                      color: AppColors.primaryColor,
                       size: 28,
                     ),
                   ),
                 ),
-                
+
                 Expanded(
                   child: Center(
                     child: Column(
@@ -161,38 +161,37 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: AppColors.primaryColor.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: _isVerified
-                              ? const Icon(
-                                  Icons.check_circle,
-                                  color: Colors.greenAccent,
-                                  size: 80,
-                                )
-                              : _isLoading
+                          child:
+                              _isVerified
+                                  ? const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.greenAccent,
+                                    size: 80,
+                                  )
+                                  : _isLoading
                                   ? const SizedBox(
-                                      width: 80,
-                                      height: 80,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 3,
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.email_outlined,
+                                    width: 80,
+                                    height: 80,
+                                    child: CircularProgressIndicator(
                                       color: Colors.white,
-                                      size: 80,
+                                      strokeWidth: 3,
                                     ),
+                                  )
+                                  : const Icon(
+                                    Icons.email_outlined,
+                                    color: Colors.white,
+                                    size: 80,
+                                  ),
                         ),
-                        
+
                         const SizedBox(height: 30),
-                        
+
                         // Başlık
                         Text(
-                          _isVerified
-                              ? "Email Verified!"
-                              : "Verify Your Email",
+                          _isVerified ? "Email Verified!" : "Verify Your Email",
                           style: AppStyles.titleStyle.copyWith(
                             fontSize: 28,
                             color: Colors.white,
@@ -200,9 +199,9 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        
+
                         const SizedBox(height: 20),
-                        
+
                         // Açıklama metni
                         Container(
                           padding: const EdgeInsets.all(20),
@@ -222,9 +221,9 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        
+
                         const SizedBox(height: 30),
-                        
+
                         // Butonlar
                         if (!_isVerified) ...[
                           // E-postayı yeniden gönder butonu
@@ -235,7 +234,9 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: AppColors.vibrantPurple,
-                                padding: const EdgeInsets.symmetric(vertical: 15),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 15,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(25),
                                 ),
@@ -250,9 +251,9 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                               ),
                             ),
                           ),
-                          
+
                           const SizedBox(height: 20),
-                          
+
                           // Manuel kontrol butonu
                           SizedBox(
                             width: double.infinity,
@@ -260,8 +261,13 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                               onPressed: _checkEmailVerified,
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.white,
-                                side: const BorderSide(color: Colors.white, width: 2),
-                                padding: const EdgeInsets.symmetric(vertical: 15),
+                                side: const BorderSide(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 15,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(25),
                                 ),
@@ -280,7 +286,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                     ),
                   ),
                 ),
-                
+
                 // Alt bilgi
                 if (!_isVerified)
                   Container(
