@@ -26,13 +26,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadWeightData();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.animateTo(
-        700 / 3,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    });
   }
 
   Future<void> _loadWeightData() async {
@@ -51,11 +44,21 @@ class _HomePageState extends State<HomePage> {
         age = weightData.age;
         _isLoading = false;
       });
+
+      /// 🔑 Scroll animasyonu, veriler yüklendikten SONRA ve widget bağlandıktan sonra çalışacak.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            700 / 3,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
     } else {
       setState(() {
         _isLoading = false;
       });
-      // Hata durumunda kullanıcıya bilgi verilebilir
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('An error occurred while loading data.'),
@@ -66,7 +69,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _updateCurrentWeight(double newWeight) async {
-    // Optimistic update - UI'ı hemen güncelle
     setState(() {
       currentWeight = newWeight;
     });
@@ -74,7 +76,6 @@ class _HomePageState extends State<HomePage> {
     final success = await FirebaseWeightService.updateCurrentWeight(newWeight);
 
     if (!success) {
-      // Eğer güncelleme başarısız olursa, eski değeri geri yükle
       await _loadWeightData();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

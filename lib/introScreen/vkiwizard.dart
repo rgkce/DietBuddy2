@@ -5,7 +5,6 @@ import 'package:dietbuddy/mainPages/main_navigation_page.dart'; // NavBar'lı an
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class VKIWizard extends StatefulWidget {
   const VKIWizard({super.key});
 
@@ -21,8 +20,10 @@ class _VKIWizardState extends State<VKIWizard> {
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _targetWeightController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
+
   String? gender;
   double? vki;
+  DateTime? birthDate;
 
   void goToPage(int page) {
     _pageController.animateToPage(
@@ -76,6 +77,22 @@ class _VKIWizardState extends State<VKIWizard> {
               ),
               AgeGenderPage(
                 ageController: _ageController,
+                birthDate: birthDate,
+                onBirthDateChanged: (val) {
+                  setState(() {
+                    birthDate = val;
+                    if (birthDate != null) {
+                      final now = DateTime.now();
+                      int age = now.year - birthDate!.year;
+                      if (now.month < birthDate!.month ||
+                          (now.month == birthDate!.month &&
+                              now.day < birthDate!.day)) {
+                        age--;
+                      }
+                      _ageController.text = age.toString();
+                    }
+                  });
+                },
                 selectedGender: gender,
                 onGenderChanged: (val) => setState(() => gender = val),
                 onNext: () {
@@ -103,27 +120,22 @@ class _VKIWizardState extends State<VKIWizard> {
     );
   }
 
-  // Firebase kaydetme fonksiyonunu ana sınıfın içine taşıdık
   Future<void> _saveToFirestore(BuildContext context) async {
     try {
-      // Loading dialog'u göster
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         },
       );
 
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        Navigator.of(context).pop(); // Loading dialog'u kapat
+        Navigator.of(context).pop();
         throw Exception("Kullanıcı oturumu açık değil.");
       }
 
-      // Veri doğrulaması
       final height = double.tryParse(_heightController.text);
       final weight = double.tryParse(_weightController.text);
       final targetWeight = double.tryParse(_targetWeightController.text);
@@ -141,9 +153,13 @@ class _VKIWizardState extends State<VKIWizard> {
         Navigator.of(context).pop();
         throw Exception("Geçerli bir hedef kilo değeri giriniz.");
       }
+      if (birthDate == null) {
+        Navigator.of(context).pop();
+        throw Exception("Doğum tarihi seçimi yapılmalıdır.");
+      }
       if (age == null || age <= 0) {
         Navigator.of(context).pop();
-        throw Exception("Geçerli bir yaş değeri giriniz.");
+        throw Exception("Yaş hesaplanamadı.");
       }
       if (_nameController.text.trim().isEmpty) {
         Navigator.of(context).pop();
@@ -154,22 +170,23 @@ class _VKIWizardState extends State<VKIWizard> {
         throw Exception("Cinsiyet seçimi yapılmalıdır.");
       }
 
-      final userDocRef =
-          FirebaseFirestore.instance.collection('users_vki_data').doc(user.uid);
+      final userDocRef = FirebaseFirestore.instance
+          .collection('users_vki_data')
+          .doc(user.uid);
 
       final docSnapshot = await userDocRef.get();
       final currentVki = vki ?? (weight / ((height / 100) * (height / 100)));
 
       if (!docSnapshot.exists) {
-        // İlk kayıt – initialWeight eklenir
         await userDocRef.set({
           'uid': user.uid,
           'name': _nameController.text.trim(),
           'height': height,
           'weight': weight,
-          'initialWeight': weight, // sadece ilk seferde eklenir
+          'initialWeight': weight,
           'targetWeight': targetWeight,
           'age': age,
+          'birthDate': birthDate,
           'gender': gender!,
           'vki': currentVki,
           'category': _getBmiCategory(currentVki),
@@ -178,13 +195,13 @@ class _VKIWizardState extends State<VKIWizard> {
           'updatedAt': FieldValue.serverTimestamp(),
         });
       } else {
-        // Daha önce kayıt varsa – initialWeight korunur, güncellenmez
         await userDocRef.update({
           'name': _nameController.text.trim(),
           'height': height,
           'weight': weight,
           'targetWeight': targetWeight,
           'age': age,
+          'birthDate': birthDate,
           'gender': gender!,
           'vki': currentVki,
           'category': _getBmiCategory(currentVki),
@@ -193,9 +210,8 @@ class _VKIWizardState extends State<VKIWizard> {
         });
       }
 
-      Navigator.of(context).pop(); // Loading dialog'u kapat
+      Navigator.of(context).pop();
 
-      // Başarılı kayıt mesajı
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Verileriniz başarıyla kaydedildi!"),
@@ -203,23 +219,20 @@ class _VKIWizardState extends State<VKIWizard> {
         ),
       );
 
-      // Ana sayfaya yönlendir
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const MainNavigationPage()),
       );
     } catch (e) {
-      // Hata durumunda loading dialog'u kapat
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
-      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Veri kaydedilirken hata oluştu: $e"),
           backgroundColor: Colors.red,
         ),
       );
-      print("Firebase kayıt hatası: $e"); // Debug için
+      print("Firebase kayıt hatası: $e");
     }
   }
 
@@ -385,19 +398,29 @@ class HeightWeightPage extends StatelessWidget {
                   onPressed: () {
                     final height = double.tryParse(heightController.text);
                     final weight = double.tryParse(weightController.text);
-                    final targetWeight = double.tryParse(targetWeightController.text);
-                    
+                    final targetWeight = double.tryParse(
+                      targetWeightController.text,
+                    );
+
                     if (height == null || height <= 0) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Geçerli bir boy değeri giriniz")),
+                        const SnackBar(
+                          content: Text("Geçerli bir boy değeri giriniz"),
+                        ),
                       );
                     } else if (weight == null || weight <= 0) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Geçerli bir kilo değeri giriniz")),
+                        const SnackBar(
+                          content: Text("Geçerli bir kilo değeri giriniz"),
+                        ),
                       );
                     } else if (targetWeight == null || targetWeight <= 0) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Geçerli bir hedef kilo değeri giriniz")),
+                        const SnackBar(
+                          content: Text(
+                            "Geçerli bir hedef kilo değeri giriniz",
+                          ),
+                        ),
                       );
                     } else {
                       onNext();
@@ -428,6 +451,8 @@ class HeightWeightPage extends StatelessWidget {
 
 class AgeGenderPage extends StatelessWidget {
   final TextEditingController ageController;
+  final DateTime? birthDate;
+  final Function(DateTime) onBirthDateChanged;
   final String? selectedGender;
   final Function(String) onGenderChanged;
   final VoidCallback onNext;
@@ -436,6 +461,8 @@ class AgeGenderPage extends StatelessWidget {
   const AgeGenderPage({
     super.key,
     required this.ageController,
+    required this.birthDate,
+    required this.onBirthDateChanged,
     required this.selectedGender,
     required this.onGenderChanged,
     required this.onNext,
@@ -453,33 +480,79 @@ class AgeGenderPage extends StatelessWidget {
           Image.asset('assets/images/db_logo.png', height: 160),
           const SizedBox(height: 40),
           Text(
-            "Enter your age and gender",
+            "Select your birth date and gender",
             style: AppStyles.titleStyle.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: AppColors.vibrantPurple,
-              letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 20),
+          GestureDetector(
+            onTap: () async {
+              final selectedDate = await showDatePicker(
+                context: context,
+                initialDate: DateTime(2000),
+                firstDate: DateTime(1900),
+                lastDate: DateTime.now(),
+              );
+              if (selectedDate != null) {
+                onBirthDateChanged(selectedDate);
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+              decoration: BoxDecoration(
+                color: AppColors.textfield,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    birthDate == null
+                        ? "Select birth date"
+                        : "${birthDate!.day}/${birthDate!.month}/${birthDate!.year}",
+                    style: AppStyles.text,
+                  ),
+                  const Icon(Icons.calendar_today, size: 20),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
           TextField(
             controller: ageController,
-            keyboardType: TextInputType.number,
-            decoration: _inputDecoration("Age"),
+            readOnly: true,
+            decoration: InputDecoration(
+              hintText: "Calculated age",
+              filled: true,
+              fillColor: AppColors.textfield,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
+            ),
           ),
           const SizedBox(height: 20),
           DropdownButtonFormField<String>(
             value: selectedGender,
-            decoration: _inputDecoration("Select Gender"),
+            decoration: InputDecoration(
+              hintText: "Select Gender",
+              filled: true,
+              fillColor: AppColors.textfield,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
+            ),
             items: const [
               DropdownMenuItem(value: "Male", child: Text("Male")),
               DropdownMenuItem(value: "Female", child: Text("Female")),
               DropdownMenuItem(value: "Other", child: Text("Other")),
             ],
             onChanged: (value) {
-              if (value != null) {
-                onGenderChanged(value);
-              }
+              if (value != null) onGenderChanged(value);
             },
           ),
           const Spacer(),
@@ -510,41 +583,12 @@ class AgeGenderPage extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildGradientButton(
-                  label: 'Next',
-                  onPressed: () {
-                    final age = int.tryParse(ageController.text);
-                    
-                    if (age == null || age <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Geçerli bir yaş değeri giriniz")),
-                      );
-                    } else if (selectedGender == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Lütfen cinsiyetinizi seçiniz")),
-                      );
-                    } else {
-                      onNext();
-                    }
-                  },
-                ),
+                child: _buildGradientButton(label: 'Next', onPressed: onNext),
               ),
             ],
           ),
           const SizedBox(height: 30),
         ],
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      filled: true,
-      fillColor: AppColors.textfield,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide.none,
       ),
     );
   }
