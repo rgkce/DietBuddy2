@@ -183,7 +183,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 50),
                     ],
                   ),
                 ),
