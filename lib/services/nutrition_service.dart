@@ -101,10 +101,7 @@ class NutritionService {
   // Koleksiyon referansı
   CollectionReference get _nutritionCollection {
     if (_userId == null) throw Exception('User not authenticated');
-    return _firestore
-        .collection('users')
-        .doc(_userId)
-        .collection('nutrition');
+    return _firestore.collection('users').doc(_userId).collection('nutrition');
   }
 
   // Besin ekleme
@@ -132,14 +129,15 @@ class NutritionService {
       // Önce mevcut veriyi al
       final doc = await _nutritionCollection.doc(nutritionId).get();
       final currentEntry = NutritionEntry.fromFirestore(doc);
-      
+
       // Eğer API'den gelen veri ise, besin değerlerini yeni gramaja göre hesapla
       Map<String, dynamic> updateData = {'gram': newGram};
-      
+
       if (currentEntry.isFromApi && currentEntry.calories != null) {
-        final originalRatio = currentEntry.gram / 100; // Orijinal API verisi 100g başına
+        final originalRatio =
+            currentEntry.gram / 100; // Orijinal API verisi 100g başına
         final newRatio = newGram / 100;
-        
+
         updateData.addAll({
           'calories': (currentEntry.calories! / originalRatio) * newRatio,
           'protein': (currentEntry.protein! / originalRatio) * newRatio,
@@ -148,7 +146,7 @@ class NutritionService {
           'fiber': (currentEntry.fiber! / originalRatio) * newRatio,
         });
       }
-      
+
       await _nutritionCollection.doc(nutritionId).update(updateData);
     } catch (e) {
       throw Exception('Failed to update nutrition: $e');
@@ -158,31 +156,53 @@ class NutritionService {
   // Kullanıcının besinlerini getirme (gerçek zamanlı)
   Stream<List<NutritionEntry>> getUserNutrition() {
     if (_userId == null) return Stream.value([]);
-    
+
     return _nutritionCollection
         .orderBy('dateAdded', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => NutritionEntry.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => NutritionEntry.fromFirestore(doc))
+                  .toList(),
+        );
   }
 
   // Bugünkü besinleri getirme
   Stream<List<NutritionEntry>> getTodayNutrition() {
     if (_userId == null) return Stream.value([]);
-    
+
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
     final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    
+
     return _nutritionCollection
-        .where('dateAdded', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+        .where(
+          'dateAdded',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+        )
         .where('dateAdded', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
         .orderBy('dateAdded', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => NutritionEntry.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => NutritionEntry.fromFirestore(doc))
+                  .toList(),
+        );
+  }
+
+  Future<int> getDailyGoalCalories() async {
+    if (_userId == null) return 2000; // Kullanıcı yoksa varsayılan 2000 kcal
+
+    final doc = await _firestore.collection('users').doc(_userId).get();
+    final data = doc.data();
+    if (data != null && data.containsKey('goalCalories')) {
+      return (data['goalCalories'] as num)
+          .toInt(); // num olabilir, int'e dönüştür
+    } else {
+      return 2000; // Kullanıcıda hedef kalori yoksa 2000 döner
+    }
   }
 
   // Toplam günlük besin değerlerini hesaplama

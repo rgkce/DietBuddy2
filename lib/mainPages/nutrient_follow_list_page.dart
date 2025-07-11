@@ -14,6 +14,33 @@ class NutritionPage extends StatefulWidget {
 class _NutritionPageState extends State<NutritionPage> {
   final NutritionService _nutritionService = NutritionService();
 
+  int _goalCalories = 2000; // varsayılan değer
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGoalCalories();
+  }
+
+  Future<void> _loadGoalCalories() async {
+    try {
+      final goal = await _nutritionService.getDailyGoalCalories();
+      if (mounted) {
+        setState(() {
+          _goalCalories = goal;
+        });
+      }
+    } catch (e) {
+      // Hata varsa varsayılan kalori değerini ayarla ve hata logla
+      print("Goal calorie loading error: $e");
+      if (mounted) {
+        setState(() {
+          _goalCalories = 2000;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -144,8 +171,7 @@ class _NutritionPageState extends State<NutritionPage> {
         final totals = _nutritionService.calculateDailyTotals(nutritionList);
 
         final int currentCalories = totals['calories']?.toInt() ?? 0;
-        final int goalCalories = 2000; // İsteğe göre dinamik yapılabilir
-        double progress = currentCalories / goalCalories;
+        double progress = currentCalories / _goalCalories;
         if (progress > 1.0) progress = 1.0;
 
         return Padding(
@@ -153,7 +179,6 @@ class _NutritionPageState extends State<NutritionPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Başlık
               Center(
                 child: Text(
                   'Today\'s Summary',
@@ -164,7 +189,6 @@ class _NutritionPageState extends State<NutritionPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              // İlerleme Çubuğu
               ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: LinearProgressIndicator(
@@ -181,10 +205,8 @@ class _NutritionPageState extends State<NutritionPage> {
                 ),
               ),
               const SizedBox(height: 10),
-
-              // Kalori oranı metni
               Text(
-                '$currentCalories / $goalCalories kcal',
+                '$currentCalories / $_goalCalories kcal',
                 style: AppStyles.textStyle.copyWith(fontSize: 18),
               ),
             ],

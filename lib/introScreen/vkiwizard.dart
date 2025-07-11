@@ -20,10 +20,9 @@ class _VKIWizardState extends State<VKIWizard> {
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _targetWeightController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
-
   String? gender;
   double? vki;
-  DateTime? birthDate;
+  int? dailyCalories;
 
   void goToPage(int page) {
     _pageController.animateToPage(
@@ -31,6 +30,31 @@ class _VKIWizardState extends State<VKIWizard> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+  }
+
+  // Günlük kalori hesaplama fonksiyonu
+  int calculateDailyCalories(
+    double weight,
+    double height,
+    int age,
+    String gender,
+  ) {
+    double bmr;
+
+    // Harris-Benedict formülü kullanarak Bazal Metabolizma Hızı (BMR) hesaplama
+    if (gender.toLowerCase() == 'male') {
+      bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+    } else {
+      bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+    }
+
+    // Aktivite seviyesi çarpanı (sedanter yaşam tarzı varsayımı)
+    double activityMultiplier = 1.2;
+
+    // Günlük kalori ihtiyacı
+    double dailyCalorieNeeds = bmr * activityMultiplier;
+
+    return dailyCalorieNeeds.round();
   }
 
   @override
@@ -77,30 +101,22 @@ class _VKIWizardState extends State<VKIWizard> {
               ),
               AgeGenderPage(
                 ageController: _ageController,
-                birthDate: birthDate,
-                onBirthDateChanged: (val) {
-                  setState(() {
-                    birthDate = val;
-                    if (birthDate != null) {
-                      final now = DateTime.now();
-                      int age = now.year - birthDate!.year;
-                      if (now.month < birthDate!.month ||
-                          (now.month == birthDate!.month &&
-                              now.day < birthDate!.day)) {
-                        age--;
-                      }
-                      _ageController.text = age.toString();
-                    }
-                  });
-                },
                 selectedGender: gender,
                 onGenderChanged: (val) => setState(() => gender = val),
                 onNext: () {
                   final h = double.tryParse(_heightController.text);
                   final w = double.tryParse(_weightController.text);
-                  if (h != null && w != null) {
+                  final age = int.tryParse(_ageController.text);
+
+                  if (h != null && w != null && age != null && gender != null) {
                     setState(() {
                       vki = w / ((h / 100) * (h / 100));
+                      dailyCalories = calculateDailyCalories(
+                        w,
+                        h,
+                        age,
+                        gender!,
+                      );
                     });
                     goToPage(3);
                   }
@@ -109,7 +125,9 @@ class _VKIWizardState extends State<VKIWizard> {
               ),
               ResultPage(
                 vki: vki ?? 0,
-                plan: "Diyet planınızı düzenli uygulayın",
+                dailyCalories: dailyCalories ?? 0,
+                plan:
+                    "Diyet planınızı düzenli uygulayın, günlük ${dailyCalories ?? 0} kalori alınız",
                 onBack: () => goToPage(2),
                 onSave: () => _saveToFirestore(context),
               ),
@@ -120,8 +138,10 @@ class _VKIWizardState extends State<VKIWizard> {
     );
   }
 
+  // Firebase kaydetme fonksiyonunu ana sınıfın içine taşıdık
   Future<void> _saveToFirestore(BuildContext context) async {
     try {
+      // Loading dialog'u göster
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -132,10 +152,11 @@ class _VKIWizardState extends State<VKIWizard> {
 
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(); // Loading dialog'u kapat
         throw Exception("Kullanıcı oturumu açık değil.");
       }
 
+      // Veri doğrulaması
       final height = double.tryParse(_heightController.text);
       final weight = double.tryParse(_weightController.text);
       final targetWeight = double.tryParse(_targetWeightController.text);
@@ -153,13 +174,9 @@ class _VKIWizardState extends State<VKIWizard> {
         Navigator.of(context).pop();
         throw Exception("Geçerli bir hedef kilo değeri giriniz.");
       }
-      if (birthDate == null) {
-        Navigator.of(context).pop();
-        throw Exception("Doğum tarihi seçimi yapılmalıdır.");
-      }
       if (age == null || age <= 0) {
         Navigator.of(context).pop();
-        throw Exception("Yaş hesaplanamadı.");
+        throw Exception("Geçerli bir yaş değeri giriniz.");
       }
       if (_nameController.text.trim().isEmpty) {
         Navigator.of(context).pop();
@@ -176,42 +193,49 @@ class _VKIWizardState extends State<VKIWizard> {
 
       final docSnapshot = await userDocRef.get();
       final currentVki = vki ?? (weight / ((height / 100) * (height / 100)));
+      final currentDailyCalories =
+          dailyCalories ?? calculateDailyCalories(weight, height, age, gender!);
 
       if (!docSnapshot.exists) {
+        // İlk kayıt – initialWeight eklenir
         await userDocRef.set({
           'uid': user.uid,
           'name': _nameController.text.trim(),
           'height': height,
           'weight': weight,
-          'initialWeight': weight,
+          'initialWeight': weight, // sadece ilk seferde eklenir
           'targetWeight': targetWeight,
           'age': age,
-          'birthDate': birthDate,
           'gender': gender!,
           'vki': currentVki,
+          'dailyCalories': currentDailyCalories,
           'category': _getBmiCategory(currentVki),
-          'plan': "Diyet planınızı düzenli uygulayın",
+          'plan':
+              "Diyet planınızı düzenli uygulayın, günlük $currentDailyCalories kalori alınız",
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
       } else {
+        // Daha önce kayıt varsa – initialWeight korunur, güncellenmez
         await userDocRef.update({
           'name': _nameController.text.trim(),
           'height': height,
           'weight': weight,
           'targetWeight': targetWeight,
           'age': age,
-          'birthDate': birthDate,
           'gender': gender!,
           'vki': currentVki,
+          'dailyCalories': currentDailyCalories,
           'category': _getBmiCategory(currentVki),
-          'plan': "Diyet planınızı düzenli uygulayın",
+          'plan':
+              "Diyet planınızı düzenli uygulayın, günlük $currentDailyCalories kalori alınız",
           'updatedAt': FieldValue.serverTimestamp(),
         });
       }
 
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(); // Loading dialog'u kapat
 
+      // Başarılı kayıt mesajı
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Verileriniz başarıyla kaydedildi!"),
@@ -219,20 +243,23 @@ class _VKIWizardState extends State<VKIWizard> {
         ),
       );
 
+      // Ana sayfaya yönlendir
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const MainNavigationPage()),
       );
     } catch (e) {
+      // Hata durumunda loading dialog'u kapat
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Veri kaydedilirken hata oluştu: $e"),
           backgroundColor: Colors.red,
         ),
       );
-      print("Firebase kayıt hatası: $e");
+      print("Firebase kayıt hatası: $e"); // Debug için
     }
   }
 
@@ -276,6 +303,17 @@ class NamePage extends StatelessWidget {
           const SizedBox(height: 40),
           TextField(
             controller: nameController,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) {
+              FocusScope.of(context).unfocus();
+              if (nameController.text.trim().isNotEmpty) {
+                onNext();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Lütfen isminizi giriniz")),
+                );
+              }
+            },
             decoration: InputDecoration(
               hintText: "Enter your full name",
               filled: true,
@@ -338,7 +376,7 @@ class HeightWeightPage extends StatelessWidget {
           Image.asset('assets/images/db_logo.png', height: 160),
           const SizedBox(height: 40),
           Text(
-            "",
+            "Enter your height and weight",
             style: AppStyles.titleStyle.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -350,7 +388,7 @@ class HeightWeightPage extends StatelessWidget {
           TextField(
             controller: heightController,
             keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.next, // Enter → next
+            textInputAction: TextInputAction.next,
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             decoration: _inputDecoration("Height (cm)"),
           ),
@@ -367,8 +405,34 @@ class HeightWeightPage extends StatelessWidget {
             controller: targetWeightController,
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            decoration: _inputDecoration("Goal Weight (kg)"),
+            onSubmitted: (_) {
+              final height = double.tryParse(heightController.text);
+              final weight = double.tryParse(weightController.text);
+              final targetWeight = double.tryParse(targetWeightController.text);
+
+              if (height == null || height <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Geçerli bir boy değeri giriniz"),
+                  ),
+                );
+              } else if (weight == null || weight <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Geçerli bir kilo değeri giriniz"),
+                  ),
+                );
+              } else if (targetWeight == null || targetWeight <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Geçerli bir hedef kilo değeri giriniz"),
+                  ),
+                );
+              } else {
+                onNext();
+              }
+            },
+            decoration: _inputDecoration("Target Weight (kg)"),
           ),
           const Spacer(),
           Row(
@@ -454,10 +518,8 @@ class HeightWeightPage extends StatelessWidget {
   }
 }
 
-class AgeGenderPage extends StatelessWidget {
+class AgeGenderPage extends StatefulWidget {
   final TextEditingController ageController;
-  final DateTime? birthDate;
-  final Function(DateTime) onBirthDateChanged;
   final String? selectedGender;
   final Function(String) onGenderChanged;
   final VoidCallback onNext;
@@ -465,14 +527,43 @@ class AgeGenderPage extends StatelessWidget {
 
   const AgeGenderPage({
     super.key,
+    required this.ageController,
     required this.selectedGender,
     required this.onGenderChanged,
     required this.onNext,
     required this.onBack,
-    this.birthDate,
-    required this.onBirthDateChanged,
-    required this.ageController,
   });
+
+  @override
+  State<AgeGenderPage> createState() => _AgeGenderPageState();
+}
+
+class _AgeGenderPageState extends State<AgeGenderPage> {
+  DateTime? selectedBirthDate;
+
+  void _pickBirthDate(BuildContext context) async {
+    final DateTime now = DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(now.year - 20),
+      firstDate: DateTime(now.year - 120),
+      lastDate: now,
+    );
+
+    if (picked != null) {
+      setState(() {
+        selectedBirthDate = picked;
+        final calculatedAge =
+            now.year -
+            picked.year -
+            ((now.month < picked.month ||
+                    (now.month == picked.month && now.day < picked.day))
+                ? 1
+                : 0);
+        widget.ageController.text = calculatedAge.toString();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -485,7 +576,7 @@ class AgeGenderPage extends StatelessWidget {
           Image.asset('assets/images/db_logo.png', height: 160),
           const SizedBox(height: 40),
           Text(
-            "",
+            "Enter your birth date and gender",
             style: AppStyles.titleStyle.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -495,48 +586,21 @@ class AgeGenderPage extends StatelessWidget {
           ),
           const SizedBox(height: 40),
           GestureDetector(
-            onTap: () async {
-              final now = DateTime.now();
-              final selectedDate = await showDatePicker(
-                context: context,
-                initialDate: now.subtract(const Duration(days: 365 * 20)),
-                firstDate: DateTime(1900),
-                lastDate: now,
-              );
-
-              if (selectedDate != null) {
-                final age =
-                    now.year -
-                    selectedDate.year -
-                    ((now.month < selectedDate.month ||
-                            (now.month == selectedDate.month &&
-                                now.day < selectedDate.day))
-                        ? 1
-                        : 0);
-
-                ageController.text = age.toString();
-                onBirthDateChanged(selectedDate);
-              }
-            },
+            onTap: () => _pickBirthDate(context),
             child: AbsorbPointer(
               child: TextField(
-                controller: ageController,
-                decoration: InputDecoration(
-                  labelText: "Birth date",
-                  hintText: "Tap to select birth date",
-                  filled: true,
-                  fillColor: AppColors.textfield,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
+                controller: widget.ageController,
+                decoration: _inputDecoration(
+                  selectedBirthDate == null
+                      ? "Select Birth Date"
+                      : "Age: ${widget.ageController.text}",
                 ),
-                style: AppStyles.titleStyle.copyWith(fontSize: 18),
               ),
             ),
           ),
           const SizedBox(height: 20),
           DropdownButtonFormField<String>(
-            value: selectedGender,
+            value: widget.selectedGender,
             decoration: _inputDecoration("Select Gender"),
             items: const [
               DropdownMenuItem(value: "Male", child: Text("Male")),
@@ -545,7 +609,7 @@ class AgeGenderPage extends StatelessWidget {
             ],
             onChanged: (value) {
               if (value != null) {
-                onGenderChanged(value);
+                widget.onGenderChanged(value);
               }
             },
           ),
@@ -554,7 +618,7 @@ class AgeGenderPage extends StatelessWidget {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: onBack,
+                  onTap: widget.onBack,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     height: 50,
@@ -580,9 +644,24 @@ class AgeGenderPage extends StatelessWidget {
                 child: _buildGradientButton(
                   label: 'Next',
                   onPressed: () {
-                    if (ageController.text.isNotEmpty &&
-                        selectedGender != null) {
-                      onNext();
+                    final age = int.tryParse(widget.ageController.text);
+
+                    if (selectedBirthDate == null || age == null || age <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            "Lütfen geçerli bir doğum tarihi seçiniz",
+                          ),
+                        ),
+                      );
+                    } else if (widget.selectedGender == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Lütfen cinsiyetinizi seçiniz"),
+                        ),
+                      );
+                    } else {
+                      widget.onNext();
                     }
                   },
                 ),
@@ -610,16 +689,18 @@ class AgeGenderPage extends StatelessWidget {
 
 class ResultPage extends StatelessWidget {
   final double vki;
+  final int dailyCalories;
   final String plan;
   final VoidCallback onBack;
-  final VoidCallback onSave; // Yeni eklenen parametre
+  final VoidCallback onSave;
 
   const ResultPage({
     super.key,
     required this.vki,
+    required this.dailyCalories,
     required this.plan,
     required this.onBack,
-    required this.onSave, // Yeni eklenen parametre
+    required this.onSave,
   });
 
   String getBmiCategory(double vki) {
@@ -642,7 +723,7 @@ class ResultPage extends StatelessWidget {
           Image.asset('assets/images/db_logo.png', height: 160),
           const SizedBox(height: 30),
           Text(
-            "Your Diet Plan",
+            "Your Plan",
             style: AppStyles.pageTitle.copyWith(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -681,6 +762,15 @@ class ResultPage extends StatelessWidget {
                     color: AppColors.vibrantPurple.withOpacity(0.7),
                   ),
                 ),
+                const SizedBox(height: 15),
+                Text(
+                  "Daily Calories: $dailyCalories kcal",
+                  style: AppStyles.titleStyle.copyWith(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.vibrantPurple,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 Text(
                   "Recommended Plan:",
@@ -691,7 +781,7 @@ class ResultPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  plan,
+                  "$plan, günlük $dailyCalories kalori alınız",
                   style: AppStyles.text.copyWith(
                     fontSize: 16,
                     fontStyle: FontStyle.italic,
@@ -731,7 +821,7 @@ class ResultPage extends StatelessWidget {
               Expanded(
                 child: _buildGradientButton(
                   label: 'Save & Continue',
-                  onPressed: onSave, // Ana sınıftaki fonksiyonu çağır
+                  onPressed: onSave,
                 ),
               ),
             ],
