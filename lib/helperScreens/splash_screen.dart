@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:dietbuddy/constants/colors.dart';
+import 'package:dietbuddy/mainPages/main_navigation_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../helperScreens/welcome_screen.dart';
 
@@ -14,11 +16,32 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 3), () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+    _checkLogin();
+    // Timer(const Duration(seconds: 3), () {
+    //   Navigator.of(context).pushReplacement(
+    //     MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+    //   );
+    // });
+  }
+
+  Future<void> _checkLogin() async {
+    await Future.delayed(const Duration(seconds: 2));
+
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      // Kullanıcı daha önce giriş yapmış → içeri al
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigationPage()),
       );
-    });
+    } else {
+      // Kullanıcı giriş yapmamış → Welcome sayfası
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+      );
+    }
   }
 
   @override
