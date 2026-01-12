@@ -101,7 +101,10 @@ class NutritionService {
   // Koleksiyon referansı
   CollectionReference get _nutritionCollection {
     if (_userId == null) throw Exception('User not authenticated');
-    return _firestore.collection('users').doc(_userId).collection('nutrition');
+    return _firestore
+        .collection('users_vki_data')
+        .doc(_userId)
+        .collection('nutrition');
   }
 
   // Besin ekleme
@@ -195,11 +198,11 @@ class NutritionService {
   Future<int> getDailyGoalCalories() async {
     if (_userId == null) return 2000; // Kullanıcı yoksa varsayılan 2000 kcal
 
-    final doc = await _firestore.collection('users').doc(_userId).get();
+    final doc =
+        await _firestore.collection('users_vki_data').doc(_userId).get();
     final data = doc.data();
-    if (data != null && data.containsKey('goalCalories')) {
-      return (data['goalCalories'] as num)
-          .toInt(); // num olabilir, int'e dönüştür
+    if (data != null && data.containsKey('dailyCalories')) {
+      return (data['dailyCalories'] as num).toInt();
     } else {
       return 2000; // Kullanıcıda hedef kalori yoksa 2000 döner
     }

@@ -80,7 +80,7 @@ class GradientBottomNavigationBar extends StatelessWidget {
           final color =
               isSelected
                   ? AppColors.primaryColor
-                  : AppColors.primaryColor.withOpacity(0.65);
+                  : AppColors.primaryColor.withValues(alpha: 0.65);
 
           return GestureDetector(
             onTap: () => onTap(index),

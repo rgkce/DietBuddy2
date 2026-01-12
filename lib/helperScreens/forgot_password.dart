@@ -80,7 +80,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     padding: const EdgeInsets.all(20),
                     margin: const EdgeInsets.symmetric(vertical: 20),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.08),
+                      color: AppColors.primaryColor.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(25),
                       border: Border.all(color: Colors.white24),
                     ),
@@ -102,7 +102,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                             labelText: 'Email',
                             hintText: 'your email@gmail.com',
                             hintStyle: TextStyle(
-                              color: AppColors.primaryColor.withOpacity(0.5),
+                              color: AppColors.primaryColor.withValues(
+                                alpha: 0.5,
+                              ),
                             ),
                             labelStyle: const TextStyle(
                               color: AppColors.primaryColor,
@@ -112,7 +114,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               color: AppColors.primaryColor,
                             ),
                             filled: true,
-                            fillColor: AppColors.primaryColor.withOpacity(0.05),
+                            fillColor: AppColors.primaryColor.withValues(
+                              alpha: 0.05,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(30),
                               borderSide: BorderSide(
@@ -122,7 +126,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(30),
                               borderSide: BorderSide(
-                                color: AppColors.primaryColor.withOpacity(0.4),
+                                color: AppColors.primaryColor.withValues(
+                                  alpha: 0.4,
+                                ),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -216,6 +222,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       );
 
       Future.delayed(const Duration(seconds: 5), () {
+        if (!mounted) return;
         Navigator.of(context).push(
           MaterialPageRoute(builder: (context) => const PasswordChanged()),
         );

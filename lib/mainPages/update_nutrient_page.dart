@@ -71,9 +71,9 @@ class _UpdateNutritionPageState extends State<UpdateNutritionPage> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.vibrantBlue.withOpacity(0.3),
-                      AppColors.vibrantPurple.withOpacity(0.3),
-                      AppColors.vibrantPink.withOpacity(0.3),
+                      AppColors.vibrantBlue.withValues(alpha: 0.3),
+                      AppColors.vibrantPurple.withValues(alpha: 0.3),
+                      AppColors.vibrantPink.withValues(alpha: 0.3),
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -91,9 +91,9 @@ class _UpdateNutritionPageState extends State<UpdateNutritionPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.vibrantBlue.withOpacity(0.75),
-                          AppColors.vibrantPink.withOpacity(0.75),
-                          AppColors.vibrantPurple.withOpacity(0.75),
+                          AppColors.vibrantBlue.withValues(alpha: 0.75),
+                          AppColors.vibrantPink.withValues(alpha: 0.75),
+                          AppColors.vibrantPurple.withValues(alpha: 0.75),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -163,7 +163,7 @@ class _UpdateNutritionPageState extends State<UpdateNutritionPage> {
         ),
         labelStyle: TextStyle(color: AppColors.lineerStart, fontSize: fontSize),
         filled: true,
-        fillColor: AppColors.primaryColor.withOpacity(0.7),
+        fillColor: AppColors.primaryColor.withValues(alpha: 0.7),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -200,6 +200,7 @@ class _UpdateNutritionPageState extends State<UpdateNutritionPage> {
             _isLoading = false;
           });
 
+          if (!mounted) return;
           Navigator.pop(context, {
             'updatedGram': newGram,
             'updatedCalorie': newCalorie,
@@ -207,7 +208,7 @@ class _UpdateNutritionPageState extends State<UpdateNutritionPage> {
         }
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.vibrantPurple.withOpacity(0.65),
+        backgroundColor: AppColors.vibrantPurple.withValues(alpha: 0.65),
         foregroundColor: AppColors.primaryColor,
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -224,7 +225,7 @@ class _UpdateNutritionPageState extends State<UpdateNutritionPage> {
     return ElevatedButton(
       onPressed: null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.vibrantPurple.withOpacity(0.45),
+        backgroundColor: AppColors.vibrantPurple.withValues(alpha: 0.45),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         minimumSize: Size(double.infinity, height),
       ),

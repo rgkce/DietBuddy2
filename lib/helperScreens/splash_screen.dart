@@ -31,11 +31,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (user != null) {
       // Kullanıcı daha önce giriş yapmış → içeri al
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainNavigationPage()),
       );
     } else {
+      if (!mounted) return;
       // Kullanıcı giriş yapmamış → Welcome sayfası
       Navigator.pushReplacement(
         context,

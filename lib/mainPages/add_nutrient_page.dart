@@ -18,6 +18,7 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
 
   bool _isSaving = false;
   bool _isSearching = false;
+  bool _isDetailLoading = false;
   List<Food> _searchResults = [];
   Food? _selectedFood;
   FoodDetails? _selectedFoodDetails;
@@ -59,9 +60,9 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.vibrantBlue.withOpacity(0.3),
-                      AppColors.vibrantPurple.withOpacity(0.3),
-                      AppColors.vibrantPink.withOpacity(0.3),
+                      AppColors.vibrantBlue.withValues(alpha: 0.3),
+                      AppColors.vibrantPurple.withValues(alpha: 0.3),
+                      AppColors.vibrantPink.withValues(alpha: 0.3),
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -84,9 +85,9 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.vibrantBlue.withOpacity(0.75),
-                          AppColors.vibrantPink.withOpacity(0.75),
-                          AppColors.vibrantPurple.withOpacity(0.75),
+                          AppColors.vibrantBlue.withValues(alpha: 0.75),
+                          AppColors.vibrantPink.withValues(alpha: 0.75),
+                          AppColors.vibrantPurple.withValues(alpha: 0.75),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -94,7 +95,7 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.shadowColor.withOpacity(0.3),
+                          color: AppColors.shadowColor.withValues(alpha: 0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -152,7 +153,7 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
             hintStyle: TextStyle(color: AppColors.lineerEnd),
             labelStyle: TextStyle(color: AppColors.lineerStart),
             filled: true,
-            fillColor: AppColors.primaryColor.withOpacity(0.7),
+            fillColor: AppColors.primaryColor.withValues(alpha: 0.7),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(color: AppColors.lineerStart),
@@ -197,7 +198,7 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
           Container(
             height: 200,
             decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.5),
+              color: AppColors.primaryColor.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
             ),
             child: ListView.builder(
@@ -232,7 +233,14 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
         ],
 
         // Selected Food Details
-        if (_selectedFoodDetails != null) ...[
+        if (_isDetailLoading) ...[
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          ),
+        ] else if (_selectedFoodDetails != null) ...[
           _buildSelectedFoodCard(),
           const SizedBox(height: 20),
         ],
@@ -252,9 +260,12 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
         // Save Button (only if food is selected and amount is entered)
         if (_selectedFood != null) ...[
           ElevatedButton(
-            onPressed: _isSaving ? null : _saveFoodEntry,
+            onPressed:
+                (_isSaving || _selectedFoodDetails == null)
+                    ? null
+                    : _saveFoodEntry,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.vibrantPurple.withOpacity(0.65),
+              backgroundColor: AppColors.vibrantPurple.withValues(alpha: 0.65),
               foregroundColor: Colors.white,
               elevation: 4,
               shape: RoundedRectangleBorder(
@@ -286,7 +297,7 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primaryColor.withOpacity(0.8),
+        color: AppColors.primaryColor.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.vibrantPurple, width: 1),
       ),
@@ -351,7 +362,10 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
   }) {
     return TextFormField(
       controller: controller,
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      keyboardType:
+          isNumber
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : TextInputType.text,
       style: AppStyles.textStyle.copyWith(color: AppColors.lineerStart),
       decoration: InputDecoration(
         prefixIcon: icon,
@@ -360,7 +374,7 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
         hintStyle: TextStyle(color: AppColors.lineerEnd),
         labelStyle: TextStyle(color: AppColors.lineerStart),
         filled: true,
-        fillColor: AppColors.primaryColor.withOpacity(0.7),
+        fillColor: AppColors.primaryColor.withValues(alpha: 0.7),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: AppColors.lineerStart),
@@ -417,13 +431,23 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
 
   // Select a food from search results
   void _selectFood(Food food) async {
-    setState(() => _selectedFood = food);
+    setState(() {
+      _selectedFood = food;
+      _isDetailLoading = true;
+      _selectedFoodDetails = null;
+    });
 
     try {
       final details = await _fatSecretService.getFoodDetails(food.id);
-      setState(() => _selectedFoodDetails = details);
+      if (mounted) {
+        setState(() {
+          _selectedFoodDetails = details;
+          _isDetailLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) {
+        setState(() => _isDetailLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to get food details: $e'),
@@ -446,8 +470,8 @@ class _AddNutritionPageState extends State<AddNutritionPage> {
         final details = _selectedFoodDetails!;
 
         // Calculate nutrition based on entered amount
-        // Assuming API data is per 100g, adjust multiplier as needed
-        final multiplier = amount / 100;
+        // Use metric_serving_amount from API as base for calculations
+        final multiplier = amount / details.metricServingAmount;
 
         // Return the data to be processed by NutritionPage
         Navigator.pop(context, {

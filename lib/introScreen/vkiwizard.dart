@@ -9,7 +9,7 @@ class VKIWizard extends StatefulWidget {
   const VKIWizard({super.key});
 
   @override
-  _VKIWizardState createState() => _VKIWizardState();
+  State<VKIWizard> createState() => _VKIWizardState();
 }
 
 class _VKIWizardState extends State<VKIWizard> {
@@ -76,9 +76,9 @@ class _VKIWizardState extends State<VKIWizard> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.vibrantBlue.withOpacity(0.5),
-                AppColors.vibrantPurple.withOpacity(0.5),
-                AppColors.vibrantPink.withOpacity(0.5),
+                AppColors.vibrantBlue.withValues(alpha: 0.5),
+                AppColors.vibrantPurple.withValues(alpha: 0.5),
+                AppColors.vibrantPink.withValues(alpha: 0.5),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -152,7 +152,7 @@ class _VKIWizardState extends State<VKIWizard> {
 
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        Navigator.of(context).pop(); // Loading dialog'u kapat
+        if (mounted) Navigator.of(context).pop(); // Loading dialog'u kapat
         throw Exception("Kullanıcı oturumu açık değil.");
       }
 
@@ -163,27 +163,27 @@ class _VKIWizardState extends State<VKIWizard> {
       final age = int.tryParse(_ageController.text);
 
       if (height == null || height <= 0) {
-        Navigator.of(context).pop();
+        if (mounted) Navigator.of(context).pop();
         throw Exception("Geçerli bir boy değeri giriniz.");
       }
       if (weight == null || weight <= 0) {
-        Navigator.of(context).pop();
+        if (mounted) Navigator.of(context).pop();
         throw Exception("Geçerli bir kilo değeri giriniz.");
       }
       if (targetWeight == null || targetWeight <= 0) {
-        Navigator.of(context).pop();
+        if (mounted) Navigator.of(context).pop();
         throw Exception("Geçerli bir hedef kilo değeri giriniz.");
       }
       if (age == null || age <= 0) {
-        Navigator.of(context).pop();
+        if (mounted) Navigator.of(context).pop();
         throw Exception("Geçerli bir yaş değeri giriniz.");
       }
       if (_nameController.text.trim().isEmpty) {
-        Navigator.of(context).pop();
+        if (mounted) Navigator.of(context).pop();
         throw Exception("İsim alanı boş olamaz.");
       }
       if (gender == null || gender!.isEmpty) {
-        Navigator.of(context).pop();
+        if (mounted) Navigator.of(context).pop();
         throw Exception("Cinsiyet seçimi yapılmalıdır.");
       }
 
@@ -233,6 +233,7 @@ class _VKIWizardState extends State<VKIWizard> {
         });
       }
 
+      if (!context.mounted) return;
       Navigator.of(context).pop(); // Loading dialog'u kapat
 
       // Başarılı kayıt mesajı
@@ -249,6 +250,7 @@ class _VKIWizardState extends State<VKIWizard> {
       );
     } catch (e) {
       // Hata durumunda loading dialog'u kapat
+      if (!context.mounted) return;
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -259,7 +261,7 @@ class _VKIWizardState extends State<VKIWizard> {
           backgroundColor: Colors.red,
         ),
       );
-      print("Firebase kayıt hatası: $e"); // Debug için
+      debugPrint("Firebase kayıt hatası: $e"); // Debug için
     }
   }
 
@@ -734,7 +736,7 @@ class ResultPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.textfield.withOpacity(0.8),
+              color: AppColors.textfield.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -759,7 +761,7 @@ class ResultPage extends StatelessWidget {
                   "Category: $bmiCategory",
                   style: AppStyles.subtitleStyle.copyWith(
                     fontSize: 20,
-                    color: AppColors.vibrantPurple.withOpacity(0.7),
+                    color: AppColors.vibrantPurple.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 15),
@@ -785,7 +787,7 @@ class ResultPage extends StatelessWidget {
                   style: AppStyles.text.copyWith(
                     fontSize: 16,
                     fontStyle: FontStyle.italic,
-                    color: AppColors.vibrantPurple.withOpacity(0.7),
+                    color: AppColors.vibrantPurple.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -846,9 +848,9 @@ Widget _buildGradientButton({
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.vibrantBlue.withOpacity(0.4),
-            AppColors.vibrantPurple.withOpacity(0.4),
-            AppColors.vibrantPink.withOpacity(0.4),
+            AppColors.vibrantBlue.withValues(alpha: 0.4),
+            AppColors.vibrantPurple.withValues(alpha: 0.4),
+            AppColors.vibrantPink.withValues(alpha: 0.4),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,

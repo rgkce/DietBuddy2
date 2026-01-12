@@ -28,7 +28,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadUserData() async {
     try {
       Map<String, dynamic> userData = await UserService.loadUserData();
-      
+
       setState(() {
         _userName = userData['name'];
         _userEmail = userData['email'];
@@ -36,7 +36,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading user data: $e');
+      debugPrint('Error loading user data: $e');
       setState(() {
         _isLoading = false;
       });
@@ -47,14 +47,14 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _updateUserName(String newName) async {
     try {
       await UserService.updateUserName(newName);
-      
+
       setState(() {
         _userName = newName;
       });
-      
+
       _showSuccessDialog('Name updated successfully!');
     } catch (e) {
-      print('Error updating name: $e');
+      debugPrint('Error updating name: $e');
       _showErrorDialog(e.toString());
     }
   }
@@ -62,14 +62,14 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _updateUserHeight(String newHeight) async {
     try {
       await UserService.updateUserHeight(newHeight);
-      
+
       setState(() {
         _userHeight = newHeight;
       });
-      
+
       _showSuccessDialog('Height updated successfully!');
     } catch (e) {
-      print('Error updating height: $e');
+      debugPrint('Error updating height: $e');
       _showErrorDialog(e.toString());
     }
   }
@@ -77,14 +77,15 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _deleteAccount() async {
     try {
       await UserService.deleteAccount();
-      
+
+      if (!mounted) return;
       // Welcome screen'e yönlendir
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const WelcomeScreen()),
         (Route<dynamic> route) => false,
       );
     } catch (e) {
-      print('Error deleting account: $e');
+      debugPrint('Error deleting account: $e');
       _showErrorDialog(e.toString());
     }
   }
@@ -92,13 +93,14 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _logout() async {
     try {
       await UserService.logout();
-      
+
+      if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const WelcomeScreen()),
         (Route<dynamic> route) => false,
       );
     } catch (e) {
-      print('Error logging out: $e');
+      debugPrint('Error logging out: $e');
       _showErrorDialog(e.toString());
     }
   }
@@ -106,66 +108,62 @@ class _ProfilePageState extends State<ProfilePage> {
   void _showSuccessDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.primaryColor.withOpacity(0.75),
-        title: Text(
-          'Success',
-          style: AppStyles.titleStyle.copyWith(
-            color: AppColors.lineerStart,
-            fontSize: 25,
-          ),
-        ),
-        content: Text(
-          message,
-          style: AppStyles.textStyle,
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.button,
-              foregroundColor: AppColors.lineerStart,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppColors.primaryColor.withValues(alpha: 0.75),
+            title: Text(
+              'Success',
+              style: AppStyles.titleStyle.copyWith(
+                color: AppColors.lineerStart,
+                fontSize: 25,
+              ),
             ),
-            child: Text(
-              'OK',
-              style: AppStyles.text.copyWith(color: AppColors.lineerStart),
-            ),
-            onPressed: () => Navigator.pop(context),
+            content: Text(message, style: AppStyles.textStyle),
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.button,
+                  foregroundColor: AppColors.lineerStart,
+                ),
+                child: Text(
+                  'OK',
+                  style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showErrorDialog(String error) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.primaryColor.withOpacity(0.75),
-        title: Text(
-          'Error',
-          style: AppStyles.titleStyle.copyWith(
-            color: AppColors.errorColor,
-            fontSize: 25,
-          ),
-        ),
-        content: Text(
-          error,
-          style: AppStyles.textStyle,
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.button,
-              foregroundColor: AppColors.lineerStart,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppColors.primaryColor.withValues(alpha: 0.75),
+            title: Text(
+              'Error',
+              style: AppStyles.titleStyle.copyWith(
+                color: AppColors.errorColor,
+                fontSize: 25,
+              ),
             ),
-            child: Text(
-              'OK',
-              style: AppStyles.text.copyWith(color: AppColors.lineerStart),
-            ),
-            onPressed: () => Navigator.pop(context),
+            content: Text(error, style: AppStyles.textStyle),
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.button,
+                  foregroundColor: AppColors.lineerStart,
+                ),
+                child: Text(
+                  'OK',
+                  style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -182,9 +180,9 @@ class _ProfilePageState extends State<ProfilePage> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppColors.vibrantBlue.withOpacity(0.3),
-              AppColors.vibrantPurple.withOpacity(0.3),
-              AppColors.vibrantPink.withOpacity(0.3),
+              AppColors.vibrantBlue.withValues(alpha: 0.3),
+              AppColors.vibrantPurple.withValues(alpha: 0.3),
+              AppColors.vibrantPink.withValues(alpha: 0.3),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -207,10 +205,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       const Spacer(),
                       Text(
                         'My Profile',
-                      style: AppStyles.pageTitle.copyWith(
-                      color: AppColors.vibrantPurple,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        style: AppStyles.pageTitle.copyWith(
+                          color: AppColors.vibrantPurple,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const Spacer(flex: 2),
                     ],
@@ -231,7 +229,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   SizedBox(height: height * 0.05),
                   // Diğer kartlar
                   CustomProfileCard(
-                    title: "Update Height ${_userHeight.isNotEmpty ? '($_userHeight cm)' : ''}",
+                    title:
+                        "Update Height ${_userHeight.isNotEmpty ? '($_userHeight cm)' : ''}",
                     onTap: () => _showEditHeightDialog(context),
                     icon: Icons.height_outlined,
                     iconColor: AppColors.primaryColor,
@@ -291,9 +290,9 @@ class _ProfilePageState extends State<ProfilePage> {
         borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
           colors: [
-            AppColors.vibrantBlue.withOpacity(0.3),
-            AppColors.vibrantPurple.withOpacity(0.3),
-            AppColors.vibrantPink.withOpacity(0.3),
+            AppColors.vibrantBlue.withValues(alpha: 0.3),
+            AppColors.vibrantPurple.withValues(alpha: 0.3),
+            AppColors.vibrantPink.withValues(alpha: 0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -357,59 +356,58 @@ class _ProfilePageState extends State<ProfilePage> {
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        backgroundColor: AppColors.primaryColor.withOpacity(0.75),
-        title: Text(
-          "Update Height",
-          style: AppStyles.titleStyle.copyWith(
-            color: AppColors.lineerStart,
-            fontSize: 25,
-          ),
-        ),
-        content: TextField(
-          controller: heightController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-          ],
-          decoration: InputDecoration(
-            hintText: "Enter your height in cm",
-            filled: true,
-            fillColor: AppColors.textfield.withOpacity(0.5),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+      builder:
+          (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            child: Text(
-              "Cancel",
-              style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+            backgroundColor: AppColors.primaryColor.withValues(alpha: 0.75),
+            title: Text(
+              "Update Height",
+              style: AppStyles.titleStyle.copyWith(
+                color: AppColors.lineerStart,
+                fontSize: 25,
+              ),
             ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.button,
-              foregroundColor: AppColors.primaryColor,
+            content: TextField(
+              controller: heightController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: InputDecoration(
+                hintText: "Enter your height in cm",
+                filled: true,
+                fillColor: AppColors.textfield.withValues(alpha: 0.5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-            child: Text(
-              "Save",
-              style: AppStyles.text.copyWith(color: AppColors.lineerStart),
-            ),
-            onPressed: () {
-              if (heightController.text.isNotEmpty) {
-                _updateUserHeight(heightController.text);
-                Navigator.pop(context);
-              }
-            },
+            actions: [
+              TextButton(
+                child: Text(
+                  "Cancel",
+                  style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.button,
+                  foregroundColor: AppColors.primaryColor,
+                ),
+                child: Text(
+                  "Save",
+                  style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+                ),
+                onPressed: () {
+                  if (heightController.text.isNotEmpty) {
+                    _updateUserHeight(heightController.text);
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -418,141 +416,144 @@ class _ProfilePageState extends State<ProfilePage> {
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        backgroundColor: AppColors.primaryColor.withOpacity(0.75),
-        title: Text(
-          "Update Name",
-          style: AppStyles.titleStyle.copyWith(
-            color: AppColors.lineerStart,
-            fontSize: 25,
-          ),
-        ),
-        content: TextField(
-          controller: nameController,
-          decoration: InputDecoration(
-            hintText: "Enter your new name",
-            filled: true,
-            fillColor: AppColors.textfield.withOpacity(0.5),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+      builder:
+          (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            child: Text(
-              "Cancel",
-              style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+            backgroundColor: AppColors.primaryColor.withValues(alpha: 0.75),
+            title: Text(
+              "Update Name",
+              style: AppStyles.titleStyle.copyWith(
+                color: AppColors.lineerStart,
+                fontSize: 25,
+              ),
             ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.button,
-              foregroundColor: AppColors.primaryColor,
+            content: TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                hintText: "Enter your new name",
+                filled: true,
+                fillColor: AppColors.textfield.withValues(alpha: 0.5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-            child: Text(
-              "Save",
-              style: AppStyles.text.copyWith(color: AppColors.lineerStart),
-            ),
-            onPressed: () {
-              if (nameController.text.isNotEmpty) {
-                _updateUserName(nameController.text);
-                Navigator.pop(context);
-              }
-            },
+            actions: [
+              TextButton(
+                child: Text(
+                  "Cancel",
+                  style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.button,
+                  foregroundColor: AppColors.primaryColor,
+                ),
+                child: Text(
+                  "Save",
+                  style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+                ),
+                onPressed: () {
+                  if (nameController.text.isNotEmpty) {
+                    _updateUserName(nameController.text);
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.primaryColor.withOpacity(0.75),
-        title: Text(
-          "Log Out",
-          style: AppStyles.titleStyle.copyWith(
-            color: AppColors.lineerStart,
-            fontSize: 25,
-          ),
-        ),
-        content: Text(
-          "Are you sure you want to log out of your account?",
-          style: AppStyles.textStyle,
-        ),
-        actions: [
-          TextButton(
-            child: Text(
-              "Cancel",
-              style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+      builder:
+          (_) => AlertDialog(
+            backgroundColor: AppColors.primaryColor.withValues(alpha: 0.75),
+            title: Text(
+              "Log Out",
+              style: AppStyles.titleStyle.copyWith(
+                color: AppColors.lineerStart,
+                fontSize: 25,
+              ),
             ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.button,
-              foregroundColor: AppColors.lineerStart,
+            content: Text(
+              "Are you sure you want to log out of your account?",
+              style: AppStyles.textStyle,
             ),
-            child: Text(
-              "Yes",
-              style: AppStyles.text.copyWith(color: AppColors.lineerStart),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              _logout();
-            },
+            actions: [
+              TextButton(
+                child: Text(
+                  "Cancel",
+                  style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.button,
+                  foregroundColor: AppColors.lineerStart,
+                ),
+                child: Text(
+                  "Yes",
+                  style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  _logout();
+                },
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showDeleteAccountDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.primaryColor.withOpacity(0.75),
-        title: Text(
-          "Delete Account",
-          style: AppStyles.titleStyle.copyWith(
-            color: AppColors.errorColor,
-            fontSize: 25,
-          ),
-        ),
-        content: Text(
-          "Are you sure you want to delete your account? This action cannot be undone.",
-          style: AppStyles.textStyle,
-        ),
-        actions: [
-          TextButton(
-            child: Text(
-              "Cancel",
-              style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+      builder:
+          (_) => AlertDialog(
+            backgroundColor: AppColors.primaryColor.withValues(alpha: 0.75),
+            title: Text(
+              "Delete Account",
+              style: AppStyles.titleStyle.copyWith(
+                color: AppColors.errorColor,
+                fontSize: 25,
+              ),
             ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.errorColor,
-              foregroundColor: AppColors.primaryColor,
+            content: Text(
+              "Are you sure you want to delete your account? This action cannot be undone.",
+              style: AppStyles.textStyle,
             ),
-            child: Text(
-              "Delete",
-              style: AppStyles.text.copyWith(color: AppColors.primaryColor),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              _deleteAccount();
-            },
+            actions: [
+              TextButton(
+                child: Text(
+                  "Cancel",
+                  style: AppStyles.text.copyWith(color: AppColors.lineerStart),
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.errorColor,
+                  foregroundColor: AppColors.primaryColor,
+                ),
+                child: Text(
+                  "Delete",
+                  style: AppStyles.text.copyWith(color: AppColors.primaryColor),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  _deleteAccount();
+                },
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -586,7 +587,8 @@ class CustomProfileCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: gradientColors ??
+            colors:
+                gradientColors ??
                 [AppColors.vibrantBlue, AppColors.vibrantPurple],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -594,7 +596,7 @@ class CustomProfileCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadowColor.withOpacity(0.1),
+              color: AppColors.shadowColor.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: Offset(0, 5),
             ),

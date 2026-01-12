@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class WeightData {
   final double startWeight;
@@ -29,30 +30,28 @@ class FirebaseWeightService {
     try {
       final uid = currentUserId;
       if (uid == null) {
-        print('Kullanıcı giriş yapmamış');
+        debugPrint('Kullanıcı giriş yapmamış');
         return null;
       }
 
-      final doc = await _firestore
-          .collection('users_vki_data')
-          .doc(uid)
-          .get();
+      final doc = await _firestore.collection('users_vki_data').doc(uid).get();
 
       if (doc.exists) {
         final data = doc.data()!;
         return WeightData(
-          startWeight: (data['initialWeight'] ?? data['weight'])?.toDouble() ?? 0.0,
+          startWeight:
+              (data['initialWeight'] ?? data['weight'])?.toDouble() ?? 0.0,
           currentWeight: (data['weight'] as num).toDouble(),
           goalWeight: (data['targetWeight'] as num).toDouble(),
           height: (data['height'] as num).toInt(),
           age: (data['age'] as num).toInt(),
         );
       } else {
-        print('Kullanıcı verisi bulunamadı');
+        debugPrint('Kullanıcı verisi bulunamadı');
         return null;
       }
     } catch (e) {
-      print('Firestore veri yükleme hatası: $e');
+      debugPrint('Firestore veri yükleme hatası: $e');
       return null;
     }
   }
@@ -62,19 +61,18 @@ class FirebaseWeightService {
     try {
       final uid = currentUserId;
       if (uid == null) {
-        print('Kullanıcı giriş yapmamış');
+        debugPrint('Kullanıcı giriş yapmamış');
         return false;
       }
 
-      await _firestore
-          .collection('users_vki_data')
-          .doc(uid)
-          .update({'weight': newWeight});
+      await _firestore.collection('users_vki_data').doc(uid).update({
+        'weight': newWeight,
+      });
 
-      print('Kilo başarıyla güncellendi: $newWeight kg');
+      debugPrint('Kilo başarıyla güncellendi: $newWeight kg');
       return true;
     } catch (e) {
-      print('Kilo güncelleme hatası: $e');
+      debugPrint('Kilo güncelleme hatası: $e');
       return false;
     }
   }
@@ -90,12 +88,12 @@ class FirebaseWeightService {
     try {
       final uid = currentUserId;
       if (uid == null) {
-        print('Kullanıcı giriş yapmamış');
+        debugPrint('Kullanıcı giriş yapmamış');
         return false;
       }
 
       final Map<String, dynamic> updateData = {};
-      
+
       if (weight != null) updateData['weight'] = weight;
       if (targetWeight != null) updateData['targetWeight'] = targetWeight;
       if (initialWeight != null) updateData['initialWeight'] = initialWeight;
@@ -107,14 +105,14 @@ class FirebaseWeightService {
             .collection('users_vki_data')
             .doc(uid)
             .update(updateData);
-        
-        print('Kullanıcı verisi başarıyla güncellendi');
+
+        debugPrint('Kullanıcı verisi başarıyla güncellendi');
         return true;
       }
-      
+
       return false;
     } catch (e) {
-      print('Veri güncelleme hatası: $e');
+      debugPrint('Veri güncelleme hatası: $e');
       return false;
     }
   }
@@ -126,15 +124,14 @@ class FirebaseWeightService {
       return Stream.value(null);
     }
 
-    return _firestore
-        .collection('users_vki_data')
-        .doc(uid)
-        .snapshots()
-        .map((doc) {
+    return _firestore.collection('users_vki_data').doc(uid).snapshots().map((
+      doc,
+    ) {
       if (doc.exists) {
         final data = doc.data()!;
         return WeightData(
-          startWeight: (data['initialWeight'] ?? data['weight'])?.toDouble() ?? 0.0,
+          startWeight:
+              (data['initialWeight'] ?? data['weight'])?.toDouble() ?? 0.0,
           currentWeight: (data['weight'] as num).toDouble(),
           goalWeight: (data['targetWeight'] as num).toDouble(),
           height: (data['height'] as num).toInt(),
@@ -152,9 +149,9 @@ class FirebaseWeightService {
   static Future<void> signOut() async {
     try {
       await _auth.signOut();
-      print('Kullanıcı çıkış yaptı');
+      debugPrint('Kullanıcı çıkış yaptı');
     } catch (e) {
-      print('Çıkış hatası: $e');
+      debugPrint('Çıkış hatası: $e');
     }
   }
 }

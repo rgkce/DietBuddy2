@@ -179,7 +179,9 @@ class _SignupPageState extends State<SignupPage> {
           labelText: labelText,
           labelStyle: const TextStyle(color: AppColors.primaryColor),
           hintText: hintText,
-          hintStyle: TextStyle(color: AppColors.primaryColor.withOpacity(0.5)),
+          hintStyle: TextStyle(
+            color: AppColors.primaryColor.withValues(alpha: 0.5),
+          ),
           prefixIcon: Icon(icon, color: AppColors.primaryColor),
           suffixIcon:
               isPassword
@@ -196,7 +198,7 @@ class _SignupPageState extends State<SignupPage> {
                   )
                   : null,
           filled: true,
-          fillColor: AppColors.primaryColor.withOpacity(0.1),
+          fillColor: AppColors.primaryColor.withValues(alpha: 0.1),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30.0),
             borderSide: const BorderSide(color: AppColors.primaryColor),

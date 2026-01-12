@@ -306,14 +306,14 @@ class _LoginPageState extends State<LoginPage> {
                 )
                 : null,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white.withValues(alpha: 0.1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.7)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.7)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.4)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),

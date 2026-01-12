@@ -232,7 +232,9 @@ class _ChangePasswordState extends State<ChangePassword> {
           onPressed: onToggleVisibility,
         ),
         hintText: hintText,
-        hintStyle: TextStyle(color: AppColors.primaryColor.withOpacity(0.5)),
+        hintStyle: TextStyle(
+          color: AppColors.primaryColor.withValues(alpha: 0.5),
+        ),
         filled: true,
         fillColor: Colors.transparent,
         border: OutlineInputBorder(
@@ -284,7 +286,7 @@ class _ChangePasswordState extends State<ChangePassword> {
       await user.updatePassword(newPassword);
       return true;
     } catch (e) {
-      print('Şifre güncelleme hatası: $e');
+      debugPrint('Şifre güncelleme hatası: $e');
       return false;
     }
   }
@@ -390,7 +392,7 @@ class _ChangePasswordState extends State<ChangePassword> {
         _passwordError = "An unexpected error occurred. Please try again.";
         _isLoading = false;
       });
-      print('Hata: $e');
+      debugPrint('Hata: $e');
     }
   }
 }

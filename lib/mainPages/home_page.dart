@@ -69,6 +69,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _isLoading = false;
       });
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('An error occurred while loading data.'),
@@ -87,6 +88,7 @@ class _HomePageState extends State<HomePage> {
 
     if (!success) {
       await _loadWeightData();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('An error occurred while updating Weight.'),
@@ -94,6 +96,7 @@ class _HomePageState extends State<HomePage> {
         ),
       );
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Weight successfully updated.'),
@@ -121,9 +124,9 @@ class _HomePageState extends State<HomePage> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.vibrantBlue.withOpacity(0.3),
-                AppColors.vibrantPurple.withOpacity(0.3),
-                AppColors.vibrantPink.withOpacity(0.3),
+                AppColors.vibrantBlue.withValues(alpha: 0.3),
+                AppColors.vibrantPurple.withValues(alpha: 0.3),
+                AppColors.vibrantPink.withValues(alpha: 0.3),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -189,12 +192,12 @@ class _HomePageState extends State<HomePage> {
       margin: const EdgeInsets.symmetric(vertical: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primaryColor.withOpacity(0.08),
+        color: AppColors.primaryColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.button.withOpacity(0.1),
+            color: AppColors.button.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 6),
           ),
@@ -285,7 +288,7 @@ class _HomePageState extends State<HomePage> {
                         isStrokeCapRound: true,
                         belowBarData: BarAreaData(
                           show: true,
-                          color: AppColors.chartColor.withOpacity(0.2),
+                          color: AppColors.chartColor.withValues(alpha: 0.2),
                         ),
                         dotData: FlDotData(
                           show: true,
@@ -303,7 +306,7 @@ class _HomePageState extends State<HomePage> {
                     lineTouchData: LineTouchData(
                       enabled: true,
                       touchTooltipData: LineTouchTooltipData(
-                        tooltipBgColor: Colors.black.withOpacity(0.7),
+                        tooltipBgColor: Colors.black.withValues(alpha: 0.7),
                         getTooltipItems: (touchedSpots) {
                           return touchedSpots.map((spot) {
                             return LineTooltipItem(
@@ -336,8 +339,8 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryColor.withOpacity(0.1),
-            AppColors.primaryColor.withOpacity(0.05),
+            AppColors.primaryColor.withValues(alpha: 0.1),
+            AppColors.primaryColor.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -345,7 +348,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.button.withOpacity(0.2),
+            color: AppColors.button.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -400,7 +403,7 @@ class _HomePageState extends State<HomePage> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: AlertDialog(
-              backgroundColor: AppColors.primaryColor.withOpacity(0.75),
+              backgroundColor: AppColors.primaryColor.withValues(alpha: 0.75),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),

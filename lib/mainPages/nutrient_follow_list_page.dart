@@ -32,7 +32,7 @@ class _NutritionPageState extends State<NutritionPage> {
       }
     } catch (e) {
       // Hata varsa varsayılan kalori değerini ayarla ve hata logla
-      print("Goal calorie loading error: $e");
+      debugPrint("Goal calorie loading error: $e");
       if (mounted) {
         setState(() {
           _goalCalories = 2000;
@@ -48,9 +48,9 @@ class _NutritionPageState extends State<NutritionPage> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppColors.vibrantBlue.withOpacity(0.3),
-              AppColors.vibrantPurple.withOpacity(0.3),
-              AppColors.vibrantPink.withOpacity(0.3),
+              AppColors.vibrantBlue.withValues(alpha: 0.3),
+              AppColors.vibrantPurple.withValues(alpha: 0.3),
+              AppColors.vibrantPink.withValues(alpha: 0.3),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -77,7 +77,9 @@ class _NutritionPageState extends State<NutritionPage> {
                   icon: Icon(Icons.add, color: AppColors.primaryColor),
                   label: Text('Add Nutrition', style: AppStyles.primaryStyle),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.vibrantPurple.withOpacity(0.8),
+                    backgroundColor: AppColors.vibrantPurple.withValues(
+                      alpha: 0.8,
+                    ),
                     foregroundColor: AppColors.primaryColor,
                     elevation: 4,
                     shape: RoundedRectangleBorder(
@@ -123,7 +125,9 @@ class _NutritionPageState extends State<NutritionPage> {
                           Icon(
                             Icons.restaurant_menu,
                             size: 64,
-                            color: AppColors.vibrantPurple.withOpacity(0.5),
+                            color: AppColors.vibrantPurple.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -194,7 +198,7 @@ class _NutritionPageState extends State<NutritionPage> {
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 18,
-                  backgroundColor: AppColors.shadowColor.withOpacity(0.5),
+                  backgroundColor: AppColors.shadowColor.withValues(alpha: 0.5),
                   valueColor: AlwaysStoppedAnimation<Color>(
                     progress < 0.5
                         ? AppColors.lineerEnd
@@ -222,8 +226,8 @@ class _NutritionPageState extends State<NutritionPage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryColor.withOpacity(0.9),
-            AppColors.vibrantPink.withOpacity(0.7),
+            AppColors.primaryColor.withValues(alpha: 0.9),
+            AppColors.vibrantPink.withValues(alpha: 0.7),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -231,7 +235,7 @@ class _NutritionPageState extends State<NutritionPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowColor.withOpacity(0.2),
+            color: AppColors.shadowColor.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -486,7 +490,7 @@ class _NutritionPageState extends State<NutritionPage> {
                     labelText: 'Amount (g)',
                     labelStyle: TextStyle(color: AppColors.lineerStart),
                     filled: true,
-                    fillColor: AppColors.primaryColor.withOpacity(0.7),
+                    fillColor: AppColors.primaryColor.withValues(alpha: 0.7),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: AppColors.vibrantPurple),
@@ -526,24 +530,22 @@ class _NutritionPageState extends State<NutritionPage> {
                         nutrition.id,
                         newGram,
                       );
+                      if (!context.mounted) return;
                       Navigator.pop(context);
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Amount updated successfully!'),
-                            backgroundColor: AppColors.vibrantPurple,
-                          ),
-                        );
-                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Amount updated successfully!'),
+                          backgroundColor: AppColors.vibrantPurple,
+                        ),
+                      );
                     } catch (e) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Failed to update amount: $e'),
-                            backgroundColor: AppColors.vibrantPink,
-                          ),
-                        );
-                      }
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to update amount: $e'),
+                          backgroundColor: AppColors.vibrantPink,
+                        ),
+                      );
                     }
                   }
                 },
@@ -565,7 +567,7 @@ class _NutritionPageState extends State<NutritionPage> {
       context: context,
       builder:
           (context) => AlertDialog(
-            backgroundColor: AppColors.primaryColor.withOpacity(0.85),
+            backgroundColor: AppColors.primaryColor.withValues(alpha: 0.85),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),

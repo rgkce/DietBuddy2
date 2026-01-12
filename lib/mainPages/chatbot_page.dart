@@ -68,7 +68,6 @@ class _ChatbotPageState extends State<ChatbotPage>
       'message': "Hi, I'm Vita. How can I help you with nutrition?",
     });
 
-    // Gemini modelini başlat
     _initializeGemini();
   }
 
@@ -93,9 +92,9 @@ class _ChatbotPageState extends State<ChatbotPage>
       );
 
       _chatSession = _model.startChat();
-      print('Gemini model başarıyla başlatıldı');
+      debugPrint('Gemini model başarıyla başlatıldı');
     } catch (e) {
-      print('Gemini başlatma hatası: $e');
+      debugPrint('Gemini başlatma hatası: $e');
       setState(() {
         _messages.add({
           'role': 'bot',
@@ -121,7 +120,7 @@ class _ChatbotPageState extends State<ChatbotPage>
         throw Exception('Chat session başlatılamadı');
       }
 
-      print('Gemini\'ye mesaj gönderiliyor: $message');
+      debugPrint('Gemini\'ye mesaj gönderiliyor: $message');
 
       final response = await _chatSession!.sendMessage(Content.text(message));
 
@@ -131,7 +130,7 @@ class _ChatbotPageState extends State<ChatbotPage>
         return 'Üzgünüm, şu anda size yardımcı olamıyorum. Lütfen sorunuzu farklı şekilde sormayı deneyin.';
       }
     } catch (e) {
-      print('Gemini API Hatası: $e');
+      debugPrint('Gemini API Hatası: $e');
 
       if (e.toString().contains('API_KEY')) {
         return 'API anahtarı hatası. Lütfen geliştirici ile iletişime geçin.';
@@ -167,22 +166,18 @@ class _ChatbotPageState extends State<ChatbotPage>
         _isTyping = false;
         _messages.add({'role': 'bot', 'message': response});
       });
-
-      _scrollToBottom();
     } catch (e) {
       setState(() {
         _isTyping = false;
         _messages.add({
           'role': 'bot',
-          'message': 'Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.',
+          'message': 'Error: Could not connect to AI service.',
         });
       });
-
-      _scrollToBottom();
     }
+    _scrollToBottom();
   }
 
-  // Streaming response için alternatif fonksiyon
   void _sendMessageWithStream() async {
     final text = _controller.text.trim();
     if (text.isEmpty || _isTyping) return;
@@ -191,7 +186,6 @@ class _ChatbotPageState extends State<ChatbotPage>
       _messages.add({'role': 'user', 'message': text});
       _controller.clear();
       _isTyping = true;
-      // Streaming mesajı için placeholder ekle
       _messages.add({'role': 'bot', 'message': '', 'isStreaming': 'true'});
     });
 
@@ -204,33 +198,36 @@ class _ChatbotPageState extends State<ChatbotPage>
       await for (final chunk in response) {
         if (chunk.text != null) {
           fullResponse += chunk.text!;
-          setState(() {
-            // Son mesajı güncelle (streaming mesajı)
-            _messages.last = {
-              'role': 'bot',
-              'message': fullResponse,
-              'isStreaming': 'true',
-            };
-          });
-          _scrollToBottom();
+          if (mounted) {
+            setState(() {
+              _messages.last = {
+                'role': 'bot',
+                'message': fullResponse,
+                'isStreaming': 'true',
+              };
+            });
+            _scrollToBottom();
+          }
         }
       }
 
-      setState(() {
-        _isTyping = false;
-        // Streaming tamamlandı
-        _messages.last = {'role': 'bot', 'message': fullResponse};
-      });
+      if (mounted) {
+        setState(() {
+          _isTyping = false;
+          _messages.last = {'role': 'bot', 'message': fullResponse};
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isTyping = false;
-        _messages.last = {
-          'role': 'bot',
-          'message': 'Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.',
-        };
-      });
+      if (mounted) {
+        setState(() {
+          _isTyping = false;
+          _messages.last = {
+            'role': 'bot',
+            'message': 'Error during streaming.',
+          };
+        });
+      }
     }
-
     _scrollToBottom();
   }
 
@@ -255,7 +252,7 @@ class _ChatbotPageState extends State<ChatbotPage>
       });
     });
 
-    // Yeni chat session başlat
+    // Restart chat session
     _chatSession = _model.startChat();
   }
 
@@ -286,12 +283,12 @@ class _ChatbotPageState extends State<ChatbotPage>
               decoration: BoxDecoration(
                 color:
                     isUser
-                        ? AppColors.vibrantPink.withOpacity(0.3)
-                        : AppColors.vibrantPurple.withOpacity(0.4),
+                        ? AppColors.vibrantPink.withValues(alpha: 0.3)
+                        : AppColors.vibrantPurple.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.shadowColor.withOpacity(0.2),
+                    color: AppColors.shadowColor.withValues(alpha: 0.2),
                     blurRadius: 6,
                     spreadRadius: 1,
                   ),
@@ -325,7 +322,7 @@ class _ChatbotPageState extends State<ChatbotPage>
                             style: TextStyle(
                               fontSize: fontSize * 0.8,
                               fontStyle: FontStyle.italic,
-                              color: AppColors.textColor.withOpacity(0.7),
+                              color: AppColors.textColor.withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -406,9 +403,9 @@ class _ChatbotPageState extends State<ChatbotPage>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.vibrantBlue.withOpacity(0.3),
-                AppColors.vibrantPurple.withOpacity(0.3),
-                AppColors.vibrantPink.withOpacity(0.3),
+                AppColors.vibrantBlue.withValues(alpha: 0.3),
+                AppColors.vibrantPurple.withValues(alpha: 0.3),
+                AppColors.vibrantPink.withValues(alpha: 0.3),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -484,7 +481,9 @@ class _ChatbotPageState extends State<ChatbotPage>
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.shadowColor.withOpacity(0.3),
+                                color: AppColors.shadowColor.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 6,
                                 spreadRadius: 2,
                               ),
@@ -522,7 +521,9 @@ class _ChatbotPageState extends State<ChatbotPage>
                             borderRadius: BorderRadius.circular(50),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.shadowColor.withOpacity(0.3),
+                                color: AppColors.shadowColor.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 6,
                                 spreadRadius: 1,
                               ),

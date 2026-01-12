@@ -2,16 +2,17 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class OllamaService {
   static const String _baseUrl = 'http://127.0.0.1:11434';
   static const String _defaultModel = 'phi3:mini';
-  
+
   // Mevcut modelleri listele
   Future<List<String>> getAvailableModels() async {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/api/tags'));
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return (data['models'] as List)
@@ -19,11 +20,11 @@ class OllamaService {
             .toList();
       }
     } catch (e) {
-      print('Model listesi alınamadı: $e');
+      debugPrint('Model listesi alınamadı: $e');
     }
     return [];
   }
-  
+
   // Basit mesaj gönderme
   Future<String> sendMessage(String message, {String? model}) async {
     try {
@@ -47,17 +48,17 @@ class OllamaService {
       return 'Bağlantı hatası: Ollama sunucusunun çalıştığından emin olun.';
     }
   }
-  
+
   // Konuşma geçmişi ile mesaj gönderme
   Future<String> sendMessageWithContext(
-    String message, 
-    List<Map<String, String>> context,
-    {String? model}
-  ) async {
+    String message,
+    List<Map<String, String>> context, {
+    String? model,
+  }) async {
     try {
       // Konuşma geçmişini prompt'a ekle
       String fullPrompt = _buildPromptWithContext(message, context);
-      
+
       final response = await http.post(
         Uri.parse('$_baseUrl/api/generate'),
         headers: {'Content-Type': 'application/json'},
@@ -65,10 +66,7 @@ class OllamaService {
           'model': model ?? _defaultModel,
           'prompt': fullPrompt,
           'stream': false,
-          'options': {
-            'temperature': 0.7,
-            'max_tokens': 500,
-          }
+          'options': {'temperature': 0.7, 'max_tokens': 500},
         }),
       );
 
@@ -82,15 +80,12 @@ class OllamaService {
       return 'Bağlantı hatası: $e';
     }
   }
-  
+
   // Streaming yanıt (gelişmiş kullanım için)
   Stream<String> sendMessageStream(String message, {String? model}) async* {
     try {
-      final request = http.Request(
-        'POST',
-        Uri.parse('$_baseUrl/api/generate'),
-      );
-      
+      final request = http.Request('POST', Uri.parse('$_baseUrl/api/generate'));
+
       request.headers['Content-Type'] = 'application/json';
       request.body = jsonEncode({
         'model': model ?? _defaultModel,
@@ -99,7 +94,7 @@ class OllamaService {
       });
 
       final response = await http.Client().send(request);
-      
+
       if (response.statusCode == 200) {
         await for (final chunk in response.stream.transform(utf8.decoder)) {
           final lines = chunk.split('\n');
@@ -121,15 +116,18 @@ class OllamaService {
       yield 'Hata: $e';
     }
   }
-  
-  String _buildPromptWithContext(String message, List<Map<String, String>> context) {
-    String prompt = "Aşağıdaki konuşma geçmişini göz önünde bulundurarak yanıt ver:\n\n";
-    
+
+  String _buildPromptWithContext(
+    String message,
+    List<Map<String, String>> context,
+  ) {
+    String prompt =
+        "Aşağıdaki konuşma geçmişini göz önünde bulundurarak yanıt ver:\n\n";
+
     // Son 5 mesajı al (performans için)
-    final recentContext = context.length > 10 
-        ? context.sublist(context.length - 10) 
-        : context;
-    
+    final recentContext =
+        context.length > 10 ? context.sublist(context.length - 10) : context;
+
     for (final msg in recentContext) {
       if (msg['role'] == 'user') {
         prompt += "Kullanıcı: ${msg['message']}\n";
@@ -137,11 +135,11 @@ class OllamaService {
         prompt += "Asistan: ${msg['message']}\n";
       }
     }
-    
+
     prompt += "\nKullanıcı: $message\nAsistan: ";
     return prompt;
   }
-  
+
   // Sunucu durumunu kontrol et
   Future<bool> isServerRunning() async {
     try {
